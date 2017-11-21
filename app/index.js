@@ -17,7 +17,7 @@ app.use(bodyParser.json({limit: '428800'}))
 app.use(session({secret: "something"}))
 
 //  - Initialize authentication middleware with passport
-require('./auth').init(app)
+require('./middleware/auth').init(app)
 app.use(passport.initialize())
 app.use(passport.session())
 
