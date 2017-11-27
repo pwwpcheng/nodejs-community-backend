@@ -1,7 +1,7 @@
 const express = require('express')
 const session = require('express-session')
 const passport = require('passport')
-const mongoConn = require('./conn/mongo_conn')
+const mongoConn = require('./connections/mongo_conn')
 const bodyParser = require("body-parser")
 const cookieParser = require('cookie-parser')
 
@@ -16,12 +16,17 @@ app.use(bodyParser.json({limit: '428800'}))
 // Initialize middleware
 app.use(session({secret: "something"}))
 
-//  - Initialize authentication middleware with passport
-require('./middleware/auth').init(app)
+// - Initialize authentication middleware with passport
+require('./middlewares/auth').init(app)
 app.use(passport.initialize())
 app.use(passport.session())
 
-// Set routes for passport
-app.use('/api', require('./route/routes'))
+// Set routes for application
+app.use('/api', require('./routes/route'))
+
+// - Initialize error handler
+//   Error handler must be the last imported middleware.
+const errorHandlerMiddleware = require('./middlewares/error_handler').middleware
+app.use(errorHandlerMiddleware)
 
 module.exports = app;

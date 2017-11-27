@@ -2,7 +2,7 @@
  * Module dependencies.
  */
 const LocalStrategy = require('passport-local').Strategy
-const User = require('../../../model/user/model').User
+const User = require('../../../models/user/model').User
 
 /**
  * Expose

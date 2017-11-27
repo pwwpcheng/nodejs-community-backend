@@ -1,5 +1,5 @@
 const passport = require('passport')
-const User = require('../../model/user/model').User
+const User = require('../../models/user/model').User
 const localStrategy = require('./strategy/local-strategy')
 const authMiddleware = require('./middleware')
 

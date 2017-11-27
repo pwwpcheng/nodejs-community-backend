@@ -13,7 +13,8 @@ exports.logout = function (req, res) {
 exports.authenticate = function(req, res, next) {
   passport.authenticate('local', function (err, user, info) {
     if (err) { return next(err) }
-    if (!user) { return res.json({ "message" : "Authentication failed."}) }
+    //if (!user) { return res.json({ "message" : "Authentication failed."}) }
+    if (!user) { return next(new Error('Authentication failed')) }
     req.login(user, err, function(err) {
       if(err) { return next(err) }
       return res.json(user)
