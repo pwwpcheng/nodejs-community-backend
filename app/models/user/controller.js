@@ -11,48 +11,49 @@ const Boom = require('boom')
  * Create user
  */
 
-exports.create = function (req, res) {
-  User.create(req.body, function (err, result) {
+function createUser(req, res, next) {
+  console.log(0)
+  var query = User.create(req.body, function (err, result) {
     if (err) {
       if(err.code === 11000){
-        return res.json({data: "email already exist"})
+        return next(Error('Email or username already exists'))
       }
-      return res.send(Boom.badImplementation(err))
+      return next(err)
     }
-    return res.json(result)
-  });
+    console.log(2)
+    return res.json(result.getPublicFields())
+  })
 };
 
-
-
-/**
- * Show login form
- */
-
-exports.login = function (req, res) {
-  if(req.user == "Unknown user"){
-        return res.json({status:"Not Exist"});
+function getUser(req, res, next) {
+  User.findOne({username: req.params.username}, function(err, result) {
+      if (err) return next(err)
+      if (!result) {
+        var e = new Error("User does not exist")
+        e.statusCode = 404
+        return next(e)
+      }
+      return res.json(result.getPublicFields())
     }
-    else if(req.user == "Invalid password"){
-        return res.json({status:"Invalid Username and Password"});
-    }
-    else{
-      return res.json(req.user);
-    }
-};
+  )
+}
 
-/**
- * Logout
- */
+function updateUser(req, res, next) {
+  User.findOne({username: req.params.username}, function(err, user) {
+    if (err) return next(err)
+    return res.json(user)
+  })
+}
 
-exports.logout = function (req, res) {
-  req.logout();
-  return res.json(req.user);
-};
+function deleteUser(req, res, next) {
+  User.remove({username: req.params.username}, function(err) {
+    if(err) return next(err)
+  })
+}
 
-/** authentication check. */
-exports.authCallback = function (req, res) {
-   return res.json(req.user);
-};
-
-
+module.exports = {
+  create: createUser,
+  get: getUser,
+  update: updateUser,
+  delete: deleteUser
+}

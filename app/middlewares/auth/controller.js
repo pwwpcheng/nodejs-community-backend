@@ -17,7 +17,7 @@ exports.authenticate = function(req, res, next) {
     if (!user) { return next(new Error('Authentication failed')) }
     req.login(user, err, function(err) {
       if(err) { return next(err) }
-      return res.json(user)
+      return res.json(user.getPrivateFields())
     })
   })(req, res, next);
 }

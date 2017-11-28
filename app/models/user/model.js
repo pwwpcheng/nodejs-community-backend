@@ -135,6 +135,28 @@ UserSchema.statics = {
     }
 };
 
+UserSchema.methods.getPublicFields = function() {
+  var publicObj = {
+    username: this.username,
+    registerDate: this.registerDate
+  }
+  return publicObj
+}
+
+
+UserSchema.methods.getPrivateFields = function() {
+  var privateObj = {
+    username: this.username,
+    email: this.email,
+    name: this.name,
+    age: this.age,
+    city: this.city,
+    phone: this.phone,
+    registerDate: this.registerDate
+  }
+  return privateObj
+}
+
 var user = mongoose.model('User', UserSchema)
 /** export schema */
 module.exports = {

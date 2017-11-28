@@ -14,20 +14,16 @@ module.exports = new LocalStrategy({
   },
   function(username, password, done) {
     var options = {
-      criteria: { username: username },
-      select: 'name email sha256_password salt'
+      criteria: { username: username }
     }
     User.load(options, function (err, user) {
       if (err) return done(err)
       if (!user) {
-        console.log("unknown user")
         return done(null, false, { message: 'Unknown user' })
       }
       if (!user.authenticate(password)) {
-        console.log("invalid user")
         return done(null, false, { message: 'Invalid password' })
       }
-      console.log("success")
       return done(null, user)
     })
   }
