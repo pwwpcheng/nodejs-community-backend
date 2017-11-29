@@ -12,7 +12,6 @@ const Boom = require('boom')
  */
 
 function createUser(req, res, next) {
-  console.log(0)
   var query = User.create(req.body, function (err, result) {
     if (err) {
       if(err.code === 11000){
@@ -20,7 +19,6 @@ function createUser(req, res, next) {
       }
       return next(err)
     }
-    console.log(2)
     return res.json(result.getPublicFields())
   })
 };
@@ -39,16 +37,29 @@ function getUser(req, res, next) {
 }
 
 function updateUser(req, res, next) {
-  User.findOne({username: req.params.username}, function(err, user) {
+  
+  User.findOneAndUpdate({username: req.params.username}, req.body, {new: true}, function(err, user) {
     if (err) return next(err)
-    return res.json(user)
+    if (req.user.username !== req.params.username) {
+      var err = new Error("You are only allowed to update your own profile")
+      err.statusCode = 400
+      return next(err)
+    } 
+    return res.json(user.getPrivateFields())
   })
 }
 
 function deleteUser(req, res, next) {
-  User.remove({username: req.params.username}, function(err) {
-    if(err) return next(err)
-  })
+  User.findOneAndRemove({username: req.params.username})
+      .exec(function(err, user) {
+        if(err) return next(err)
+        if(!user) {
+          err = new Error(req.params.username + " does not exist")
+          err.statusCode = 404
+          return next(err)
+        }
+        return res.status(204).send()
+      })
 }
 
 module.exports = {

@@ -15,7 +15,9 @@ function authenticationMiddleware () {
     if (req.isAuthenticated()) {
       return next()
     }
-    res.json({"error": "not authenticated"})
+    var err = new Error("Not authenticated")
+    err.statusCode = 400
+    return next(err)
   }
 }
 

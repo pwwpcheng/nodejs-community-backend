@@ -135,6 +135,16 @@ UserSchema.statics = {
     }
 };
 
+UserSchema.methods.getUserModifiableFields = function() {
+  return {
+    email: true,
+    name: true,
+    age: true,
+    city: true,
+    phone: true
+  }
+}
+
 UserSchema.methods.getPublicFields = function() {
   var publicObj = {
     username: this.username,
