@@ -45,7 +45,11 @@ var UserSchema = new Schema({
   salt: { 
     type: String, 
     default: '' 
-  }
+  },
+  banned: {
+    type: Boolean,
+    default: false
+  },
 }, {collection: 'User'})
 
 UserSchema

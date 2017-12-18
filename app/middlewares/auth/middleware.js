@@ -3,7 +3,10 @@
 
 function authenticationMiddleware () {
   return function (req, res, next) {
+    
+    //Enbling the following to bypass authenticationMiddleware
     //return next()
+    
     // Skip authentication for public routes
     var _ = require('underscore')
            , nonSecurePaths = ['/', '/about', '/contact', '/login', '/user'];

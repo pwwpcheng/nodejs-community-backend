@@ -1,0 +1,13 @@
+const S3Config = require('../../config/S3')
+const async = require('async')
+
+
+function getS3Url(data) {
+  return util.format( S3Config.urlFormat, 
+                      data.S3bucket ? data.S3Bucket : S3Config.bucket 
+                    ) + data.path
+}
+
+module.exports = {
+  getUrl: getS3Url
+} 
