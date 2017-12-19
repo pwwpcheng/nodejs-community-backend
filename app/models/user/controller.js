@@ -2,24 +2,69 @@
  * Module dependencies.
  */
 
+const async = require('async')
 const mongoose = require('mongoose')
 const User = require('./model').User
 const Boom = require('boom')
 
 
-/**
- * Create user
- */
+// checkFieldExists returns true if {fieldName: value} exists
+// in User collection
+function checkFieldExists(fieldName, value) {
+  var selector = {}
+  selector[fieldName] = value
+  return function(next) {
+    User.findOne(selector, function(err, result){
+      if(err) { next(err) }
+      if(result) { next(err, fieldName) }
+      else { next(err) }
+    })
+  }
+}
+
+function arrayFilter(arr) {
+  return function(next) {
+    arr = arr.filter(x => x !== undefined)
+    next(null, arr)
+  }
+}
 
 function createUser(req, res, next) {
-  var query = User.create(req.body, function (err, result) {
-    if (err) {
-      if(err.code === 11000){
-        return next(Error('Email or username already exists'))
+  var create = function() { 
+    User.create(req.body, function (err, result) {
+      if (err) {
+        console.log(err)
+        // Temporarily it's not possible to trigger this error
+        // but it's still left here just in case.
+        if(err.code === 11000){
+          return next(Error('Email or username already exists'))
+        }
+        return next(err)
       }
-      return next(err)
-    }
-    return res.json(result.getPublicFields())
+      return res.json(result.getPublicFields())
+    })
+  }
+
+  async.parallel([
+    checkFieldExists('username', req.body.username),
+    checkFieldExists('email', req.body.email),
+  ], function(err, result) {
+    if (err) { next(err) }
+    async.waterfall([
+      arrayFilter(result),
+      function(data, cb) {
+        console.log(data)
+        if (data.length === 0) {
+          create()
+        } else {
+          var err = new Error(data.join(', ') + ' already exists.')
+          err.statusCode = 403
+          next(err)
+        }
+      }
+    ], function(err) {
+        next (err)
+    })
   })
 };
 

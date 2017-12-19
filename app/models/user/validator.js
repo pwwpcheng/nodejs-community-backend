@@ -23,7 +23,7 @@ function validateUserCreate() {
     // errors in error handler
     console.log(err) 
     if (err) {
-      var returnError = new Error(err[0].msg)
+      var returnError = err
       returnError.statusCode = 400
       return next(returnError)
     }
