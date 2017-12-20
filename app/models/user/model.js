@@ -2,6 +2,14 @@ const mongoose = require("mongoose")
 const Schema = mongoose.Schema
 const crypto = require('crypto')
 
+var UserPreferenceSchema = new Schema({
+  permission: {
+    type: String,
+    enum: ['public', 'private', 'community'],
+    default: 'public'
+  }
+})
+
 var UserSchema = new Schema({
   username: { 
     type: String, 
@@ -50,6 +58,10 @@ var UserSchema = new Schema({
     type: Boolean,
     default: false
   },
+  friends: {
+    type: [Schema.Types.ObjectId],
+    default: []
+  }
 }, {collection: 'User'})
 
 UserSchema
@@ -109,8 +121,7 @@ UserSchema.methods = {
         .update(password.toString())
         .digest('hex')
     } catch (err) {
-      console.log(err)
-      return ''
+      throw err
     }
   },
 };

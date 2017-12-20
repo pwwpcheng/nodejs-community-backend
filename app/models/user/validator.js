@@ -18,10 +18,6 @@ function validateUserCreate() {
  
     var err = req.validationErrors()
     
-    // temporarily we report one error at a time
-    // until there are solutions for reporting multiple
-    // errors in error handler
-    console.log(err) 
     if (err) {
       var returnError = err
       returnError.statusCode = 400
@@ -40,10 +36,6 @@ function validateUserUpdate() {
  
     var err = req.validationErrors()
     
-    // temporarily we report one error at a time
-    // until there are solutions for reporting multiple
-    // errors in error handler
-    console.log(err) 
     if (err) {
       var returnError = new Error(err[0].msg)
       returnError.statusCode = 400

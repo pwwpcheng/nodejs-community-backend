@@ -3,12 +3,14 @@
 
 function authenticationMiddleware () {
   return function (req, res, next) {
+    
     //Enbling the following to bypass authenticationMiddleware
     //return next()
     
     // Skip authentication for public routes
+    console.log('using middleware')
     var _ = require('underscore')
-           , nonSecurePaths = ['/about', '/user'];
+           , nonSecurePaths = ['/', '/about', '/contact', '/login', '/user'];
     if ( _.contains(nonSecurePaths, req.path) ) {
       return next()
     }

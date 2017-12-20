@@ -6,7 +6,7 @@ function errorHandlerMiddleware(err, req, res, next) {
   if (err instanceof Error) {
     res.json({
       status: 'error',
-      code: err.status,
+      code: err.statusCode,
       message: [err.message || "No message"]
     })
   } else if (err instanceof Array) {
@@ -15,9 +15,9 @@ function errorHandlerMiddleware(err, req, res, next) {
       messages.push(e.msg || e.message)
       cb()
     }, function (cb) {
+      res.status(400)
       res.json({
         status: 'error',
-        code: 400,
         message: messages
       })
     })

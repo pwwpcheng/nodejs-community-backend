@@ -47,11 +47,11 @@ function updateMedia(req, res, next) {
 
 // Need modification
 function deleteMedia(req, res, next) {
-  Media.findOneAndRemove({username: req.params.username})
-      .exec(function(err, user) {
+  Media.findOneAndRemove({_id: req.params.mediaId})
+      .exec(function(err, media) {
         if(err) return next(err)
-        if(!user) {
-          err = new Error(req.params.username + " does not exist")
+        if(!media) {
+          err = new Error(req.params.mediaId + " does not exist")
           err.statusCode = 404
           return next(err)
         }
@@ -63,5 +63,5 @@ module.exports = {
 //  create: createMedia,
   get: getMedia,
 //  update: updateMedia,
-//  delete: deleteMedia
+  delete: deleteMedia
 }

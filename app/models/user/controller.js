@@ -33,7 +33,6 @@ function createUser(req, res, next) {
   var create = function() { 
     User.create(req.body, function (err, result) {
       if (err) {
-        console.log(err)
         // Temporarily it's not possible to trigger this error
         // but it's still left here just in case.
         if(err.code === 11000){
@@ -53,7 +52,6 @@ function createUser(req, res, next) {
     async.waterfall([
       arrayFilter(result),
       function(data, cb) {
-        console.log(data)
         if (data.length === 0) {
           create()
         } else {
