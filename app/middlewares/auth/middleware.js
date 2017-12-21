@@ -8,7 +8,7 @@ function authenticationMiddleware () {
     
     // Skip authentication for public routes
     var _ = require('underscore')
-           , nonSecurePaths = ['/about', '/user'];
+           , nonSecurePaths = ['/about', '/user']
     if ( _.contains(nonSecurePaths, req.path) ) {
       return next()
     }

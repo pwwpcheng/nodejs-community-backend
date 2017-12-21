@@ -31,12 +31,15 @@ const PostSchema = new Schema({
     default: Date.now()
   },
   permissions: {
-    blocked_user: [Schema.Types.ObjectId],
+    blockedUser: {
+      type: [Schema.Types.ObjectId],
+      default: []
+    },
     permissionType: {
       type: String,
       default: "public",
       enum: ['public', 'private', 'community'] 
-    }
+    },
   },
   loc: {
     type:GeoSchema
@@ -49,6 +52,19 @@ const PostSchema = new Schema({
     collection: 'Post'
   }
 )
+
+PostSchema.methods.getPublicFields = function() {
+  var returnObj = {
+    content: this.content,
+    userId: this.userId,
+    conmmunityId: this.communityId,
+    postTime: this.postTime
+  }
+  if(this.loc) {
+    returnObj['loc'] = this.loc
+  }
+  return returnObj
+}
 
 var post = mongoose.model('Post', PostSchema);
 

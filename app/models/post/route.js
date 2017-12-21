@@ -6,7 +6,7 @@ const postController = require('./controller')
 
 //router.post('/', [postValidator.validatePostCreate()], postController.create)
 router.post('/', [passport.authenticationMiddleware()], postController.create)
-//router.post('/', postController.create)
 router.get('/:postId', [passport.authenticationMiddleware()], postController.get)
+router.delete('/:postId', [passport.authenticationMiddleware()], postController.delete)
 
 module.exports = router

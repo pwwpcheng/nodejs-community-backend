@@ -2,24 +2,11 @@ const async = require('async')
 const mongoose = require('mongoose')
 const Post = require('./model').Post
 
+// This function is not completed.
 function makeSelector(req) {
   return function(callback) {
     if(req.param) {}
   }
-}
-  
-function getPost(err, req, res, next) { 
-  Post.findOne({_id: req.param.postId}, function(err, result) {
-    if(err) {
-      next(err)
-    } else if (!result) {
-      var err = new Error('Post(id:"' + postId + '") not found.')
-      err.statusCode = 400
-      next(err)
-    } else {
-      return res.json(result.getPublicFields())
-    }
-  })
 }
 
 function makePostContent(reqBody) {
@@ -34,7 +21,44 @@ function makePostContent(reqBody) {
     }
     callback(null, content)
   }
-}    
+}
+
+function checkModifyPostPermission (sessionUser) {
+  return function(post, callback) {
+    // Role has not been implemented. Here is just an example
+    // of allowing admin to operate on all posts
+    if(sessionUser.role === 'admin' ) {
+      callback()
+    } else if(sessionUser._id.equals(post.userId) ) {
+      callback()
+    } else {
+      var err = new Error("Permission denied")
+      err.statusCode = 403
+      callback(err)
+    }
+  }
+}
+
+function checkGetPostPermission(user, community) {
+  return function(post, callback) { 
+    if (post.permissions.permissionType === 'public') 
+      return callback(null, post)
+    if (post.permissions.permissionType === 'private') {
+      var err = new Error('Permission denied: private post')
+      err.statusCode = 403
+      return callback(err, null)
+    }
+    if (post.permissions.permissionType === 'community') {
+      if (!community) {
+        var err = new Error('Permission denied: community not provided')
+        err.statusCode = 403
+        callback(err)
+      }
+      console.log("Currently communityId is not checked in Post permissions. This get opr will be allowed.")
+      return callback(null, post)
+    }
+  }
+}
 
 function makePost(reqBody, sessionUser) {
   return function(postContent, callback) {
@@ -77,9 +101,67 @@ function createPost(req, res, next) {
       return res.status(204).send()
     }
   })
-} 
+}
+
+function getPostFromDb(postId) {
+  return function(callback) {
+    Post.findOne({_id: postId}, function(err, post) {
+      if(err) {
+        callback(err)
+      } else if (!post) {
+        var err = new Error('Post(id:"' + postId + '") not found.')
+        err.statusCode = 400
+        callback(err)
+      } else {
+        callback(null, post)
+      }
+    })
+  }
+}
+
+function deletePostFromDb(postId) {
+  return function(callback) {
+    Post.findOneAndRemove({_id: postId}, function(err, post){
+      if(err) { return callback(err) }
+      if(!post) { 
+        var err = new Error('Post (id: "' + postId + '" does not exist')
+        err.statusCode = 404
+        callback(err)
+      } else {
+        callback(null, post)
+      }
+    })
+  }
+}
+    
+
+function getPost(req, res, next) {
+  async.waterfall([
+    getPostFromDb(req.params.postId),
+    checkGetPostPermission(req.user),
+  ], function(err, post){
+    if(err) { return next(err) }
+    return res.json(post.getPublicFields())
+  })
+}
+
+
+function deletePost(req, res, next) {
+  async.waterfall([
+    getPostFromDb(req.params.postId),
+    checkModifyPostPermission(req.user),
+    deletePostFromDb(req.params.postId)
+  ], function(err, post) {
+    if(err) {
+      next(err)
+    } else {
+      return res.status(204).send()
+    }
+  })
+}  
 
 module.exports = {
   create: createPost,
-  get: getPost
+  get: getPost,
+  delete: deletePost
 }

@@ -4,7 +4,6 @@ const localStrategy = require('./strategy/local-strategy')
 const authMiddleware = require('./middleware')
 
 passport.serializeUser(function(user, done) {
-  console.log("user_id: " + user.id)
   done(null, user.id);
 })
 
