@@ -1,4 +1,3 @@
-module.exports = {
-  init: require('./init'),
-  middleware: require('./middleware)
-}
+var acl = require('./acl')
+
+module.exports = acl

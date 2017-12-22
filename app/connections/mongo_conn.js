@@ -5,7 +5,7 @@ function dbConnSuccessCallback() {
     console.log("Connection with mongodb succeeded")
 }
 
-mongoose.connect(config.mongo_db)
+mongoose.connect(config.mongoDB)
 
 const dbConn = mongoose.connection
 dbConn.on('error', console.error.bind(console, 'connection error'))

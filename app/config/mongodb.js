@@ -7,8 +7,10 @@ const MONGO_PORT = '27017';
 const MONGO_DB_NAME = 'spotlite';
 
 module.exports = {
-  mongo_db: util.format('mongodb://%s:%s@%s:%s/%s', MONGO_USERNAME, MONGO_PASSWORD,
+  mongoDB: util.format('mongodb://%s:%s@%s:%s/%s', MONGO_USERNAME, MONGO_PASSWORD,
                             MONGO_HOST, MONGO_PORT, MONGO_DB_NAME),
+  testDB: util.format('mongodb://%s:%s@%s:%s/%s', MONGO_USERNAME, MONGO_PASSWORD,
+                            MONGO_HOST, MONGO_PORT, 'test'),
 }
 
 //module.exports = {

@@ -26,6 +26,10 @@ require('./middlewares/auth').init(app)
 app.use(passport.initialize())
 app.use(passport.session())
 
+// Setup AccessControlList with acl middleware
+const acl = require('./middlewares/acl')
+app.use(acl.initialize())
+
 // Set routes for application
 app.use('/api', require('./routes/route'))
 

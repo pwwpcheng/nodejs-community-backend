@@ -11,6 +11,7 @@
   "dependencies": {
     "acl": "^0.4.11",
     "async": "^2.6.0",
+    "bluebird": "^3.5.1",
     "body-parser": "^1.18.2",
     "boom": "^7.1.1",
     "cookie-parser": "^1.4.3",

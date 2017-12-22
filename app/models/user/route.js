@@ -3,9 +3,12 @@ const router = express.Router()
 const passport = require('passport')
 const userController = require('./controller')
 const userValidator = require('./validator')
+const acl = require('../../middlewares/acl/')
 
 router.post('/', [userValidator.validateUserCreate()], userController.create)
-router.get('/:username', [passport.authenticationMiddleware()], userController.get)
+router.get('/:username', [passport.authenticationMiddleware(), 
+                          acl.aclMiddleware()], 
+                          userController.get)
 router.put('/:username', [passport.authenticationMiddleware(), 
                           userValidator.validateUserUpdate()],
                           userController.update)
