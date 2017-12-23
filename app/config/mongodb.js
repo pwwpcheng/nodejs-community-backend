@@ -1,10 +1,13 @@
 const util = require('util');
 
-const MONGO_USERNAME = 'test';
-const MONGO_PASSWORD = 'test_pwd';
-const MONGO_HOST = '127.0.0.1';
-const MONGO_PORT = '27017';
-const MONGO_DB_NAME = 'spotlite';
+// ----------------------------
+// MODIFY THE FOLLOWING FIELDS BEFORE USING THIS SERVICE
+const MONGO_USERNAME = 'user'
+const MONGO_PASSWORD = 'password'
+const MONGO_HOST = '127.0.0.1'
+const MONGO_PORT = '27017'
+const MONGO_DB_NAME = 'db'
+// -----------------------------
 
 module.exports = {
   mongoDB: util.format('mongodb://%s:%s@%s:%s/%s', MONGO_USERNAME, MONGO_PASSWORD,
@@ -13,6 +16,3 @@ module.exports = {
                             MONGO_HOST, MONGO_PORT, 'test'),
 }
 
-//module.exports = {
-//  mongo_db: "mongodb://test:test_pwd@127.0.0.1:27017/spotlite"
-//}

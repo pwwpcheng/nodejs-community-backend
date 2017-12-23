@@ -1,10 +1,15 @@
 const util = require('util')
 
 //This IAM is only for experimenting on S3 media retrieval
-const S3_IAM_KEY = 'AKIAIOLTULPJNPOIYOQQ'
-const S3_IAM_SECRET = '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'
-const S3_BUCKET_NAME = 'spotlite-object-storage'
+
+// ----------------------------
+// MODIFY FOLLOWING FIELDS BEFORE STARTING SERVER
+const S3_IAM_KEY = 'AKIAIOLTULPJNPEXAMPLE'
+const S3_IAM_SECRET = 'JorjqkWNE8gV7nBcrNxRVFPRfBWWiYyEXAMPLE'
+const S3_BUCKET_NAME = 'object-storage-example'
 const S3_BUCKET_REGION = 'us-west-2'
+// ----------------------------
+
 
 // Uncomment next line if using host-style format
 S3_URL_FORMAT = 'https://%s.s3.amazonaws.com'
