@@ -1,3 +1,6 @@
+// router.js
+// Stores router table for current model
+
 const express = require('express')
 const router = express.Router()
 const passport = require('passport')
