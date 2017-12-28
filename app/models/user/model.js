@@ -2,6 +2,17 @@ const mongoose = require("mongoose")
 const Schema = mongoose.Schema
 const crypto = require('crypto')
 
+var FriendSchema = new Schema({
+  date: {
+    type: Date,
+    //required: true
+  },
+  group: {
+    type: [Schema.Types.ObjectId],
+    default: [],
+  }
+})
+
 var UserPreferenceSchema = new Schema({
   permission: {
     type: String,
@@ -18,7 +29,7 @@ var UserSchema = new Schema({
     required: true,
     unique: true
   },
-  sha256_password: { 
+  sha256Password: { 
     type: String
     //required: true
   },
@@ -59,8 +70,9 @@ var UserSchema = new Schema({
     default: false
   },
   friends: {
-    type: [Schema.Types.ObjectId],
-    default: []
+    friendId: {
+      type: FriendSchema,
+    }
   }
 }, {collection: 'User'})
 
@@ -69,9 +81,9 @@ UserSchema
   .set(function(password) {
     this._password = password
     this.salt = this.makeSalt()
-    this.sha256_password = this.encryptPassword(password)
+    this.sha256Password = this.encryptPassword(password)
   })
-  .get(function() { return this.sha256_password })
+  .get(function() { return this.sha256Password })
 
 
 // The following methods are based on a Medium article about passport auth
@@ -89,7 +101,7 @@ UserSchema.methods = {
    */
 
   authenticate: function (plainText) {
-    return this.encryptPassword(plainText) === this.sha256_password;
+    return this.encryptPassword(plainText) === this.sha256Password;
   },
 
   /**

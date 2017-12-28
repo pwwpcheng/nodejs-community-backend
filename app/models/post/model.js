@@ -1,7 +1,7 @@
 const mongoose = require("mongoose")
 const Schema = mongoose.Schema
 const crypto = require('crypto')
-const GeoSchema = require('../geo/model').Schema
+const GeoSchema = require('../geo/model').GeoSchema
 
 const ContentSchema = new Schema({
   contentType: {
@@ -37,8 +37,8 @@ const PostSchema = new Schema({
     },
     permissionType: {
       type: String,
-      default: "public",
-      enum: ['public', 'private', 'community'] 
+      default: "publicPost",
+      enum: ['publicPost', 'privatePost', 'communityPost', 'friendPost'] 
     },
   },
   loc: {

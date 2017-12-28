@@ -5,6 +5,7 @@ const userController = require('./controller')
 const userValidator = require('./validator')
 const acl = require('../../middlewares/acl/')
 
+//router.get('/isFriend', [], userController.isFriendCheck)
 router.post('/', [userValidator.validateUserCreate()], userController.create)
 router.get('/:username', [passport.authenticationMiddleware(), 
                           acl.aclMiddleware()], 

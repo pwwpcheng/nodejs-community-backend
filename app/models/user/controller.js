@@ -2,25 +2,14 @@
  * Module dependencies.
  */
 
+// TODO(Cheng):
+// Move all db operations to helper
+
 const async = require('async')
 const mongoose = require('mongoose')
 const User = require('./model').User
+const userHelper = require('./helper')
 const Boom = require('boom')
-
-
-// checkFieldExists returns true if {fieldName: value} exists
-// in User collection
-function checkFieldExists(fieldName, value) {
-  var selector = {}
-  selector[fieldName] = value
-  return function(next) {
-    User.findOne(selector, function(err, result){
-      if(err) { next(err) }
-      if(result) { next(err, fieldName) }
-      else { next(err) }
-    })
-  }
-}
 
 function arrayFilter(arr) {
   return function(next) {
@@ -45,8 +34,8 @@ function createUser(req, res, next) {
   }
 
   async.parallel([
-    checkFieldExists('username', req.body.username),
-    checkFieldExists('email', req.body.email),
+    userHelper.checkFieldExists('username', req.body.username),
+    userHelper.checkFieldExists('email', req.body.email),
   ], function(err, result) {
     if (err) { next(err) }
     async.waterfall([
@@ -64,23 +53,19 @@ function createUser(req, res, next) {
         next (err)
     })
   })
-};
+}
 
 function getUser(req, res, next) {
-  User.findOne({username: req.params.username}, function(err, result) {
-      if (err) return next(err)
-      if (!result) {
-        var e = new Error("User does not exist")
-        e.statusCode = 404
-        return next(e)
-      }
+  async.waterfall([
+      userHelper.getUser(null, req.params.username)
+    ], function(err, result){
+      if(err) { return next(err) }
       return res.json(result.getPublicFields())
     }
   )
 }
 
 function updateUser(req, res, next) {
-  
   User.findOneAndUpdate({username: req.params.username}, req.body, {new: true}, function(err, user) {
     if (err) return next(err)
     if (req.user.username !== req.params.username) {
@@ -105,9 +90,17 @@ function deleteUser(req, res, next) {
       })
 }
 
+function isFriendCheck(req, res, next) {
+  userHelper.isFriend(req.user._id, req.query.b, function(err, result) {
+    if (err) { return next(err) }
+    return res.json(result)
+  }) 
+}
+
 module.exports = {
   create: createUser,
   get: getUser,
   update: updateUser,
-  delete: deleteUser
+  delete: deleteUser,
+  isFriend: isFriendCheck
 }
