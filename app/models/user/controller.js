@@ -1,63 +1,52 @@
 /**
  * Module dependencies.
  */
-
-// TODO(Cheng):
-// Move all db operations to helper
-
 const async = require('async')
 const mongoose = require('mongoose')
 const User = require('./model').User
+const groupHelper = require('../group/helper')
 const userHelper = require('./helper')
-const Boom = require('boom')
-
-function arrayFilter(arr) {
-  return function(next) {
-    arr = arr.filter(x => x !== undefined)
-    next(null, arr)
-  }
-}
 
 function createUser(req, res, next) {
-  var create = function() { 
-    User.create(req.body, function (err, result) {
-      if (err) {
-        // Temporarily it's not possible to trigger this error
-        // but it's still left here just in case.
-        if(err.code === 11000){
-          return next(Error('Email or username already exists'))
-        }
-        return next(err)
-      }
-      return res.json(result.getPublicFields())
-    })
-  }
-
-  async.parallel([
-    userHelper.checkFieldExists('username', req.body.username),
-    userHelper.checkFieldExists('email', req.body.email),
-  ], function(err, result) {
-    if (err) { next(err) }
-    async.waterfall([
-      arrayFilter(result),
-      function(data, cb) {
-        if (data.length === 0) {
-          create()
-        } else {
-          var err = new Error(data.join(', ') + ' already exists.')
+  var checkField = function(fieldName) {
+    return function(callback) {
+      var _checker = userHelper.checkFieldExists(fieldName, req.body[fieldName])
+      return _checker(function(err, res){
+        if(err) {return next(err)}
+        if (res === true) {
+          var err = new Error(fieldName + " already exists")
           err.statusCode = 403
           next(err)
         }
-      }
-    ], function(err) {
-        next (err)
-    })
+        callback(null, false)
+      })
+    }
+  }
+
+  async.waterfall([
+    checkField('username'),
+    checkField('email'),
+    userHelper.createUser(req.body)
+  ], function(err, result) {
+    if (err) { next(err) }
+    return next(null, result.getPrivateFields())
   })
 }
 
 function getUser(req, res, next) {
+  var getType = function(callback) {
+    // TODO: 
+    // Add friend relationship condition
+    if (req.params.username === req.user.username) {
+      callback(null, 'self')
+    } else if (req.user.role === 'admin'){
+      callback(null, 'admin')
+    } else {
+      callback(null, 'others')
+    }
+  }
   async.waterfall([
-      userHelper.getUser(null, req.params.username)
+      userHelper.getOneUser(null, req.params.username)
     ], function(err, result){
       if(err) { return next(err) }
       return res.json(result.getPublicFields())
@@ -66,28 +55,23 @@ function getUser(req, res, next) {
 }
 
 function updateUser(req, res, next) {
-  User.findOneAndUpdate({username: req.params.username}, req.body, {new: true}, function(err, user) {
-    if (err) return next(err)
-    if (req.user.username !== req.params.username) {
-      var err = new Error("You are only allowed to update your own profile")
-      err.statusCode = 400
-      return next(err)
-    } 
-    return res.json(user.getPrivateFields())
-  })
+  var callback = function(err, updatedUser) {
+    if (err) { return next(err) }
+    return updatedUser.getPrivateFields()
+  }
+
+  var updater = userHelper.updateOneUser(req.params.username, req.body)
+  return updater(callback)
 }
 
 function deleteUser(req, res, next) {
-  User.findOneAndRemove({username: req.params.username})
-      .exec(function(err, user) {
-        if(err) return next(err)
-        if(!user) {
-          err = new Error(req.params.username + " does not exist")
-          err.statusCode = 404
-          return next(err)
-        }
-        return res.status(204).send()
-      })
+  var callback = function(err, res) {
+    if(err) { return next(err) }
+    return res.status(204).send()
+  }
+
+  var deleter = userHelper.deleteOneUser(null, req.params.username)
+  return deleter(callback)
 }
 
 function isFriendCheck(req, res, next) {
@@ -102,5 +86,5 @@ module.exports = {
   get: getUser,
   update: updateUser,
   delete: deleteUser,
-  isFriend: isFriendCheck
+  isFriend: isFriendCheck,
 }

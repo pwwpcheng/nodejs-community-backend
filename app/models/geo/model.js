@@ -9,5 +9,5 @@ var GeoSchema = new Schema({
 })
 
 module.exports = {
-  Schema : GeoSchema
+  GeoSchema : GeoSchema
 }
