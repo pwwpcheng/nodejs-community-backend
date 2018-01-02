@@ -2,6 +2,24 @@ const async = require('async')
 const mongoose = require('mongoose')
 const Group = require('./model').Group
 
+
+// Check if a document with {fieldName: value} exists
+// fieldName: String
+// value: Object
+// return: false if not exist;
+//         id of duplicated item if exists
+function checkFieldExists(fieldName, value) {
+  var selector = {}
+  selector[fieldName] = value
+  return function(callback) {
+    Group.findOne(selector, '_id', function(err, result) {
+      if(err) {return callback(err) }
+      if(!result) { return callback(null, false) }
+      return callback(null, result._id)
+    })
+  }
+}
+
 function makeMemberObj(groupId, role='member') {
   return function(callback) {
     var memberObj = {
@@ -19,10 +37,9 @@ function getGroup(groupId, groupname) {
       err.statusCode = 400
       return callback(err)
     }
-    var selector = {
-      _id: groupId, 
-      groupname: groupname
-    }
+    var selector = {}
+    if( groupId ) { selector['_id'] = groupId }
+    if( groupname ) { selector['groupname'] = groupname }
     Group.findOne(selector, function(err, result) {
       if(err) return callback(err)
       if(!result) {
@@ -30,11 +47,12 @@ function getGroup(groupId, groupname) {
         e.statusCode = 404
         return callback(e)
       }
-      return callback(result)
+      return callback(null, result)
     })
   }
 }
 
 module.exports = {
-  getGroup: getGroup
+  getGroup: getGroup,
+  checkFieldExists: checkFieldExists
 }

@@ -2,8 +2,6 @@
  * Module dependencies.
  */
 const async = require('async')
-const mongoose = require('mongoose')
-const User = require('./model').User
 const groupHelper = require('../group/helper')
 const userHelper = require('./helper')
 

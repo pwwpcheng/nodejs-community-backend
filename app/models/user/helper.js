@@ -106,7 +106,7 @@ function isFriend(userId, friendUserId, callback) {
     }
   }
   async.waterfall([
-    getUserFromDb(userId),
+    getOneUser(userId),
     testIsFriend
   ], function(err, result) {
     if (err) { return callback(err) }
@@ -121,7 +121,7 @@ function checkFieldExists(fieldName, value) {
   var selector = {}
   selector[fieldName] = value
   return function(next) {
-    User.findOne(selector, function(err, result){
+    User.findOne(selector, '_id', function(err, result){
       if(err) { next(err) }
       if(result) { next(err, fieldName) }
       else { next(err) }
@@ -132,7 +132,7 @@ function checkFieldExists(fieldName, value) {
 function makeMemberObj(groupId, role='admin') {
   return  function(callback) {
     var memberObj = {
-      joinDate: Date.now,
+      joinDate: Date.now(),
       groupId: groupId,
       role: role
     }
@@ -143,10 +143,10 @@ function makeMemberObj(groupId, role='admin') {
 // This function does not check if a groupId is valid
 // nor userId in order to satisfy atomicity of helper
 // module. Related check should be handled to caller.
-function joinGroup(groupId, userId, role='admin') {
+function joinGroup(userId, groupId, role='admin') {
   return function(callback) {
     async.parallel([
-      getUser(userId),
+      getOneUser(userId),
       makeMemberObj(groupId), 
     ], function(err, res) {
       if(err) {return callback(err)}
@@ -155,9 +155,41 @@ function joinGroup(groupId, userId, role='admin') {
       var user = res[0]
       var memberObj = res[1]
       User.update(
-        {_id: ObjectId(userId), 'joinedGroups.groupId': { $ne: groupId }},
+        {_id: userId, 'joinedGroups.groupId': { $ne: groupId }},
         {$push: {joinedGroups: memberObj}}
         , function(err, res) {
+          // Format of res: 
+          // { ok: 1, nModified: 1, n: 0 }
+          // If we'd like to tell user that he's already joined the group
+          // we could read nModified and judge if it's 0
+
+          if(err) { return callback(new Error(err)) }
+          return callback(null, true)
+        })
+    })
+  }
+}
+
+function leaveGroup(userId, groupId) {
+  return function(callback) {
+    async.parallel([
+      getOneUser(userId),
+    ], function(err, res) {
+      if(err) {return callback(err)}
+  
+      // Format of res: [user, memberObj]
+      var user = res[0]
+      var memberObj = res[1]
+
+      User.update(
+        {_id: userId},
+        {$pull: {joinedGroups: {groupId: groupId}}}
+        , function(err, res) {
+          // Format of res: 
+          // { ok: 1, nModified: 1, n: 0 }
+          // If we'd like to tell user that he's already left the group
+          // we could read nModified and judge if it's 0
+
           if(err) { return callback(new Error(err)) }
           return callback(null, true)
         })
@@ -173,4 +205,5 @@ module.exports = {
   getOneUser: getOneUser,
   isFriend: isFriend,
   joinGroup: joinGroup,
+  leaveGroup: leaveGroup,
 } 

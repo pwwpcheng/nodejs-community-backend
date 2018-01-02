@@ -31,7 +31,6 @@ const userHelper = require('../user/helper')
 // ensure that function is executed only once.
 function initAclPolicies(cb) {
   var initPolicy = function(isInitialized, callback) {
-    console.log(acl.backend.db)
     if(isInitialized) { return callback(null, true) }
     acl.allow([
       { 
@@ -150,7 +149,6 @@ function checkGetPermission(){
       getUserRole(req.user._id),
     ], function(err, result) {
       if (err) { return next(err) }
-      console.log(result)
       // result: [true, postType, userRole]
       var postType = result[1],
           userRole = result[2]

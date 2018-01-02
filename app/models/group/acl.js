@@ -146,10 +146,9 @@ function getGroupType(groupname) {
   }
 }
 
-// Considering that a group object might be large 
-// when too many people join the group, here 
 function getMemberType(groupname, userId) {
-  var extractMember = 
+  // TODO: 
+  // NOT FINISHED 
   return function(callback) {
     async.series([
       groupHelper.getGroup(null, groupname)

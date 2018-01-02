@@ -3,7 +3,7 @@ const Schema = mongoose.Schema
 const crypto = require('crypto')
 
 var MemberSchema = new Schema({
-  userId: {
+  groupId: {
     type: String,
     required: true,
     index: true,

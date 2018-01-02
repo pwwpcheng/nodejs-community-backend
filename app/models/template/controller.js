@@ -6,7 +6,7 @@
 // but utlizes functions provided by Helper. Database operations
 // should not be included here.
 
-const async = require(async)
+const async = require('async')
 const mongoose = require('mongoose')
 const Template = require('./model').Template
 const templateHelper = require('./helper')
