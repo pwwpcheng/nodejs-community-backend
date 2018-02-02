@@ -1,7 +1,9 @@
+const aws4 = require('aws4')
 const mongoose = require("mongoose")
+const url = require('url')
 const Schema = mongoose.Schema
 const S3Config = require('../../../config/s3')
-const S3Helper = require('../../../storages/s3/helper')
+//const ModelHelper = require('/model_helper')
 
 var S3StorageSchema = new Schema({
   path: {
@@ -15,11 +17,6 @@ var S3StorageSchema = new Schema({
   region: {
     type: String
   },
-  urlType:{
-    type: String,
-    enum: ['host-style', 'path-style'],
-    default: 'host-style'
-  },
   meta: {
     type: Schema.Types.Mixed
   }
@@ -27,18 +24,37 @@ var S3StorageSchema = new Schema({
 
 S3StorageSchema
   .virtual('url')
-  .set(function(url) {
-    var data = S3Helper.extractFromUrl(url)
-    this.path = data.path
-    this.bucket = data.bucket
-    this.urlType = data.urlType
-  })
   .get(function() {
-    return S3Helper.getUrl(this)
+    var res = util.format( S3Config.urlFormat, 
+                           data.bucket ? data.bucket : S3Config.bucket 
+                         ) + data.path
+    return res
+  })
+
+S3StorageSchema
+  .virtual('request')
+  .get(function() {
+    var ops = {
+      service: 's3',
+      region: S3Config.region,
+      path: this.path,
+    }
+    return ops
+  })
+
+S3StorageSchema
+  .virtual('host')
+  .get(function(){
+    return this.bucketname + '.s3.amazonaws.com'
   })
 
 var s3Storage = mongoose.model('S3Storage', S3StorageSchema) 
+var s3DefaultImage = new s3Storage({
+  path: '/default/default.png',
+})
+
 module.exports = {
-  instance: s3Storage,
-  schema: S3StorageSchema
+  S3Storage: s3Storage,
+  S3StorageSchema: S3StorageSchema,
+  S3DefaultImage: s3DefaultImage,
 }

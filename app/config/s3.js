@@ -22,12 +22,16 @@ S3_URL_FORMAT = 'https://%s.s3.amazonaws.com'
 //const S3_IAM_SECRET = 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY'
 //const S3_BUCKET_NAME = 'johnsmith'
 
+// Root folder (Path prefix) for storing user files
+S3_USER_PATH_PREFIX = '/media/userMedia/'
+
 module.exports = {
   bucket: S3_BUCKET_NAME,
   region: S3_BUCKET_REGION,
   key: S3_IAM_KEY,
   secret: S3_IAM_SECRET,
   urlFormat: S3_URL_FORMAT, 
+  userPathPrefix: S3_USER_PATH_PREFIX,
   
   // Uncomment next line if using host-style format
   defaultUrl: util.format(S3_URL_FORMAT, S3_BUCKET_NAME)

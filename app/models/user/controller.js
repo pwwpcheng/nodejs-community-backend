@@ -43,8 +43,9 @@ function getUser(req, res, next) {
       callback(null, 'others')
     }
   }
+  
   async.waterfall([
-      userHelper.getOneUser(null, req.params.username)
+      userHelper.getUserByName(req.params.username)
     ], function(err, result){
       if(err) { return next(err) }
       return res.json(result.getPublicFields())
@@ -58,7 +59,7 @@ function updateUser(req, res, next) {
     return updatedUser.getPrivateFields()
   }
 
-  var updater = userHelper.updateOneUser(req.params.username, req.body)
+  var updater = userHelper.updateUserByName(req.params.username, req.body)
   return updater(callback)
 }
 
@@ -68,7 +69,7 @@ function deleteUser(req, res, next) {
     return res.status(204).send()
   }
 
-  var deleter = userHelper.deleteOneUser(null, req.params.username)
+  var deleter = userHelper.deleteUserByName(req.params.username)
   return deleter(callback)
 }
 

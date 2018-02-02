@@ -1,6 +1,19 @@
 const mongoose = require("mongoose")
 const Schema = mongoose.Schema
-const LocationSchema = require('../geo/model').GeoSchema
+const GeoSchema = require('../geo/model').GeoSchema
+const MediaSchema = require('../media/model').MediaSchema
+const defaultMedia = require('../media/model').defaultMedia
+
+var GroupPostSchema = new Schema({
+  postId: {
+    type: Schema.Types.ObjectId,
+    required: true,
+  },
+  addDate: {
+    type: Date,
+    required: true,
+  }
+})
 
 var GroupSchema = new Schema({
   groupname: {
@@ -15,6 +28,10 @@ var GroupSchema = new Schema({
   description: {
     type: String,
     default: 'Our group',
+  },
+  profileImage: {
+    type: MediaSchema,
+    default: defaultMedia,
   },
   creationDate: {
     type: Date,
@@ -34,15 +51,32 @@ var GroupSchema = new Schema({
       enum: ['public', 'protected', 'private'],
       default: 'public',
     },
-  }
+  },
+  posts: [GroupPostSchema],
+  
 }, {
   collection: 'Group',
 })
 
+GroupSchema.methods.getPublicFields = function() {
+  var publicObj = {
+    groupname: this.groupname,
+    alias: this.alias,
+    description: this.description,
+    profileImage: this.profileImage,
+  }
+  return publicObj
+}
+
 GroupSchema.methods.getProtectedFields = function() {
   var protectedObj = {
     groupname: this.groupname,
-    creationDate: this.creationDate
+    alias: this.alias,
+    description: this.description,
+    profileImage: this.profileImage,
+    creationDate: this.creationDate,
+    creator: this.creator,
+    posts: this.posts,
   }
   return protectedObj
 }

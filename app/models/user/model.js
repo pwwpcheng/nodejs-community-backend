@@ -2,13 +2,19 @@ const mongoose = require("mongoose")
 const Schema = mongoose.Schema
 const crypto = require('crypto')
 
+function arrayLimit(maxSize) {
+  return function(size) {
+    return size <= maxSize
+  }
+}
+
 var MemberSchema = new Schema({
   groupId: {
-    type: String,
+    type: Schema.Types.ObjectId,
     required: true,
     index: true,
   },
-  role: {
+  memberType: {
     type: String,
     enum: ['member', 'editor', 'admin', 'blocked'],
     required: true,
@@ -20,6 +26,16 @@ var MemberSchema = new Schema({
     type: [Schema.Types.ObjectId],
     default: [],
   }
+})
+
+var PinnedGroupSchema = new Schema({
+  groupdId: {
+    type: Schema.Types.ObjectId,
+    required: true,
+  },
+  pinDate: {
+    type: Date,
+  },
 })
 
 var FriendSchema = new Schema({
@@ -89,6 +105,10 @@ var UserSchema = new Schema({
     type: String, 
     default: '',
   },
+  isAdmin: {
+    type: Boolean,
+    default: false,
+  }, 
   banned: {
     type: Boolean,
     default: false,
@@ -111,6 +131,10 @@ var UserSchema = new Schema({
   joinedGroups: {
     type: [MemberSchema],
     default: [],
+    validate: [arrayLimit(2000), 'User reaches the max group limit of 2000.']
+  },
+  pinnedGroups: {
+    type: [PinnedGroupSchema],
   }
 }, {collection: 'User'})
 
@@ -123,7 +147,14 @@ UserSchema
   })
   .get(function() { return this.sha256Password })
 
-
+UserSchema
+  .virtual('userType')
+  .get(function() {
+    if (this.banned) { return 'banned' }
+    if (this.isAdmin) { return 'admin' }
+    return 'member'
+  })
+  
 // The following methods are based on a Medium article about passport auth
 // https://medium.com/@pandeysoni/user-authentication-using-passport-js-in-node-js-ed1e23e5cc36
 // Author: Soni Pandey  

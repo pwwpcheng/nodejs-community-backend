@@ -19,7 +19,10 @@ app.use(bodyParser.json({limit: '428800'}))
 app.use(validator());
 
 // Initialize middleware
-app.use(session({secret: "something"}))
+app.use(session({secret: "somethingblahblahblah"}))
+
+// Initialize AWS tokens
+require('./scripts/s3').init()
 
 // - Initialize authentication middleware with passport
 require('./middlewares/auth').init(app)

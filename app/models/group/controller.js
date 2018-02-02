@@ -4,7 +4,7 @@ const userHelper = require('../user/helper')
 
 function getGroup(req, res, next) {
   async.waterfall([
-    groupHelper.getGroup(null, req.params.groupname)
+    groupHelper.getGroupFromName(req.params.groupname)
   ], function(err, result) {
     if(err) { return next(err) }
     return res.json(result.getProtectedFields())

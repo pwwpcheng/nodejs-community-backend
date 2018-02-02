@@ -1,5 +1,6 @@
-const S3Config = require('../../config/S3')
 const async = require('async')
+const curry = require('curry')
+const S3Config = require('../../config/S3')
 
 // Reference: AWS Documentation - S3 - Signing and Authenticating REST Requests
 // http://docs.aws.amazon.com/AmazonS3/latest/dev/RESTAuthentication.html
@@ -7,19 +8,21 @@ const async = require('async')
 //      example: /photos/puppy.jpg
 // header: (Object) 
 //                  This value is temporarily not taken.
-// next: function(err, data){}
-function calculateSignature(data, next) {
-    try{
-      data.S3Signature = crypto
-                      .createHmac('sha1', Buffer.from(S3Config.secret, 'utf8'))
-                      .update(Buffer.from(data.stringToSign, 'utf-8'))
-                      .digest('base64')
-    }catch( err ) {
-      err.message = "Failed to calculate S3 Signature. " + err.message
-      throw err
-    }
-    next(null, data)
+// callback: function(err, data){}
+function calculateSignatureBase(data, callback) {
+  try{
+    data.S3Signature = crypto
+                    .createHmac('sha1', Buffer.from(S3Config.secret, 'utf8'))
+                    .update(Buffer.from(data.stringToSign, 'utf-8'))
+                    .digest('base64')
+  }catch( err ) {
+    err.message = "Failed to calculate S3 Signature. " + err.message
+    throw err
+  }
+  callback(null, data)
 }
+
+var calculateSignature = curry(calculateSignatureBase)
 
 // Prepare date, headers and stringToSign according to S3 standards
 // data: (Object) { 
@@ -31,29 +34,32 @@ function calculateSignature(data, next) {
 //                  This value is temporarily not taken.
 //        example: {""}
 // }
-// next: function(err, data){}
-function prepareData(data, next) {
-  return function(next) {
+// callback: function(err, data){}
+function prepareData(data) {
+  return function(callback) {
     data.date = data.date ? data.date : new Date()
     data.stringToSign = (data.method ? data.method.toUpperCase() : 'GET') + '\n' +
                        (data.contentMD5 ? data.contentMD5 : '')           + '\n' + 
                        (data.contentType ? data.contenType : '')          + '\n' + 
                         data.date.toUTCString()                           + '\n' + 
                        (data.S3bucket ? '/' + data.S3bucket + data.path : '/' + S3Config.bucket + data.path)
-    next(null, data)
+    callback(null, data)
   }
 }
 
-function sign(data, next) {
+// Entry point.
+// data: (Object) Preferrably S3Storage instance.
+// callback: (Function) function(err, signedRequest)
+function sign(data, callback) {
   if (!data.path || !data.method) {
-    return next(new Error("path and method must be provided for signing."))
+    return callback(new Error("path and method must be provided for signing."))
   }
   async.waterfall([
     prepareData(data),
     calculateSignature
   ], function (err, data) {
     if (err) {
-      next(err)
+      callback(err)
     } else {
       if (data.header) {
         data.header.Authentication = 'AWS ' + S3Config.key + ':' + data.S3Signature
@@ -65,7 +71,7 @@ function sign(data, next) {
         }
       }
       data.S3Url = util.format(S3Config.urlFormat, data.S3Bucket || S3Config.bucket) + data.path
-      next(null, data)
+      callback(null, data)
     }
   })
 }

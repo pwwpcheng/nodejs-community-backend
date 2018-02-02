@@ -1,6 +1,8 @@
 const mongoose = require("mongoose")
 const Schema = mongoose.Schema
-const S3StorageSchema = require('../storage/s3/model').schema
+const RawStorageSchema = require('../storage/raw/model').RawStorageSchema
+const S3StorageSchema = require('../storage/s3/model').S3StorageSchema
+const S3DefaultImage = require('../storage/s3/model').S3DefaultImage
 
 var MediaSchema = new Schema({
   //_id: Schema.Types.ObjectId,
@@ -8,6 +10,24 @@ var MediaSchema = new Schema({
   creationDate: {
     type: Date,
     default: Date.now()
+  },
+  userId: {
+    type: Schema.Types.ObjectId,
+    //required: true,
+  },
+  // isValid: specific for S3 Storages, indicates whether 
+  // object of current document have been successfully
+  // stored in S3 bucket.
+  // 
+  // When an object is to be stored in S3, our backend
+  // first creates a Media document, with isValid set as 
+  // false. It then returns a signed request to user and allow
+  // user to update selected object to S3. After the object 
+  // is successfully uploaded to S3, user sends a request to 
+  // our backend, and we mark this field as 'true'.
+  isValid: {
+    type: Boolean,
+    default: false
   },
   mediaType: {
     type: String,
@@ -23,71 +43,44 @@ var MediaSchema = new Schema({
     enum: ['raw', 's3'],
     required: true
   },
-  // s3Path: '/photos/puppy'
-  s3Storage: S3StorageSchema,
-  rawUrl: String
+  // Storage must be one of the instances of:
+  // [RawStorage, S3Storage]
+  storage: {
+    type: Schema.Types.Mixed,
+    required: true,
+  },
 }, {
   collection: 'Media'
 })
 
 
 MediaSchema
-  .virtual('url')
-  .set(function(url) {
-    if (this.storageType === 'S3') {
-      this.S3Storage.set(url)
-    } else if (this.storageType === 'raw') {
-      this.rawUrl = url
-    } else { 
-      throw new Error('Unsupported storage type: ' + this.storageType)
-    }
-  })
+  .virtual('request')
   .get(function() {
-    if (this.storageType === 's3') {
-      return this.s3Storage.url
-    } else if (this.storageType === 'raw') {
-      return this.rawUrl
-    } else { 
-      throw new Error('Unsupported storage type: ' + this.storageType)
-    }
+    return this.storage.request
   })
 
 
 MediaSchema.methods.getPublicFields = function() {
   var privateObj = {
     id: this._id,
-    url: this.url
+    request: this.request
   }
   return privateObj
 }
+
     
+var Media = mongoose.model('Media', MediaSchema)
+var defaultMedia = new Media({
+  mediaType: "image",
+  contentType: "image/png",
+  storageType: "s3",
+  storage: S3DefaultImage,
+})
 
-MediaSchema.statics = {
-
-  /**
-   * Load
-   *
-   * @param {Object} options
-   * @param {Function} cb
-   * @api private
-   */
-   load: function (options, cb) {
-      options.select = options.select
-      this.findOne(options.criteria)
-        .select(options.select)
-        .exec(cb);
-    },
-    create: function(data, callback) {
-        var media = new this(data)
-        media.save(callback)
-    },
-    get: function(id, callback) {
-        this.findOne(id, callback)
-    }
-};
-
-var media = mongoose.model('Media', MediaSchema)
 /** export schema */
 module.exports = {
-    Media: media
+  MediaSchema: MediaSchema,
+  Media: Media,
+  defaultMedia: defaultMedia,
 }

@@ -3,7 +3,41 @@ const Schema = mongoose.Schema
 const crypto = require('crypto')
 const GeoSchema = require('../geo/model').GeoSchema
 
-const ContentSchema = new Schema({
+const PostStatisticsSchema = new Schema({
+  replayCount: {
+    type: Number,
+    default: 0,
+  },
+  viewsCount: {
+    type: Number,
+    default: 0,
+  },
+})
+
+var postStatistics = mongoose.model("PostStatistics", PostStatisticsSchema)
+
+var defaultPostStatistics = new postStatistics({
+  replayCount: 0,
+  viewsCount: 0,
+})
+
+const PostGroupSchema = new Schema({
+  groupId: {
+    type: Schema.Types.ObjectId,
+    required: true,
+    index: {
+      unique: true,
+    },
+  },
+  addDate: {
+    type: Date,
+    default: Date.now(),
+  },
+})
+
+var postGroup = mongoose.model("PostGroup", PostGroupSchema)
+
+const PostContentSchema = new Schema({
   contentType: {
     type: String,
     enum: ['text', 'image', 'video', 'mixed', 'other'],
@@ -17,13 +51,15 @@ const ContentSchema = new Schema({
   media: [Schema.Types.ObjectId]
 })
 
+var postContent = mongoose.model("PostContent", PostContentSchema)
+
 const PostSchema = new Schema({
   userId: {
     type: Schema.Types.ObjectId,
     required: true
   },
-  communityId: {
-    type: [Schema.Types.ObjectId],
+  groups: {
+    type: [PostGroupSchema],
     default: []
   },
   postTime: {
@@ -45,9 +81,13 @@ const PostSchema = new Schema({
     type:GeoSchema
   },
   content: {
-    type: ContentSchema,
+    type: PostContentSchema,
     required: true
-  }
+  },
+  statistics: {
+    type: PostStatisticsSchema,
+    default: defaultPostStatistics,
+  },
 } , { 
     collection: 'Post'
   }
@@ -58,7 +98,8 @@ PostSchema.methods.getPublicFields = function() {
     content: this.content,
     userId: this.userId,
     conmmunityId: this.communityId,
-    postTime: this.postTime
+    postTime: this.postTime,
+    media: this.media,
   }
   if(this.loc) {
     returnObj['loc'] = this.loc
@@ -69,5 +110,12 @@ PostSchema.methods.getPublicFields = function() {
 var post = mongoose.model('Post', PostSchema);
 
 module.exports = {
-  Post: post
+  Post: post,
+  PostSchema: PostSchema,
+  PostStatistics: postStatistics,
+  PostStatisticsSchema: PostStatisticsSchema,
+  PostContent: postContent,
+  PostContentSchema: PostContentSchema,
+  PostGroup: postGroup,
+  PostGroupSchema: PostGroupSchema,
 }

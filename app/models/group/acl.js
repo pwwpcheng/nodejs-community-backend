@@ -52,6 +52,7 @@ const acl = require('../../middlewares/acl')
 const async = require('async')
 const postHelper = require('./helper')
 const userHelper = require('../user/helper')
+const groupHelper = require('./helper')
 
 // This function act as initialization for overall acl policy
 // and should be idempotential. Here a test policy is used to
@@ -147,15 +148,28 @@ function getGroupType(groupname) {
 }
 
 function getMemberType(groupname, userId) {
-  // TODO: 
-  // NOT FINISHED 
+  var extractMemberType = function(userObj, groupObj, callback) {
+    return function() {
+      userObj.find({'joinedGroups.groupId': groupObj._id}, function(err, result) {
+        if(err) { return callback(err) }
+        if(!result) {
+          var err = new Error("User has not joined the requested group")
+          err.statusCode = 404
+          return callback(err)
+        }
+        return callback(null, result.memberType)
+      })
+    }
+  }
+
   return function(callback) {
-    async.series([
-      groupHelper.getGroup(null, groupname)
-      
-    ], function(err, group) {
+    async.waterfall([
+      groupHelper.getGroupFromName(groupName),
+      userHelper.getUserFromId(userId),
+    ], function(err, result) {
       if (err) { return callback(err) } 
-      return callback(null, group.permissions.groupType + 'Group')
+      // result: [groupObj, userObj]
+      return extractMemberType(result[0], result[1], callback)
     })
   }
 }
