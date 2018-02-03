@@ -2,8 +2,7 @@ const async = require('async')
 const curry = require('curry')
 const mongoose = require('mongoose')
 const Media = require('./model').Media
-const S3Helper = require('../storage/s3/helper')
-
+const storageHelper = require('../storage/helper')
 
 function createMediaBase(content, callback) {
   Media.create(content, function(err, result) {
@@ -36,14 +35,55 @@ var deleteMediaById = function(mediaId) {
   return deleteMedia({_id: mediaId})
 }
 
-function getSignedPutRequest(storageType='s3', callback) {
-  if (storageType === 's3') {
-    return S3Helper.getPutRequest(callback)
-  } else {
-    let err = new Error(storageType + ' not implemented')
-    err.statusCode = 500
-    return callback(err)
+// getSignedPutRequest: create a new media document and return
+//                      PUT request for storing media into S3
+// data: (Object) related detail of request. 
+// data.storageType: (String) Required. One of available storage types
+// data.userId: (ObjectId) Required. Creator ID of request.
+// data.mediaType: (String) Optional. Reference MediaSchema.mediaType 
+function getSignedPutRequest(data, callback) {
+  let makeStorageData = function(cb) {
+    // Left here for future use.
+    return cb(null, {})
   }
+
+  let makeMediaContent = function(storageData, cb) {
+    var mediaContent =  {
+      creationDate: Date.now(),
+      userId: data.userId,
+      mediaType: data.mediaType,
+      storageType: data.storageType,
+      storage: storageData,
+      isValid: false,
+    }
+    return cb(null, mediaContent)
+  }
+
+  let getPutRequest = function(mediaDocument, cb) {
+    let _cb = function(err, request) {
+      if(err) { return cb(err) }
+      let res = {
+        mediaId: mediaDocument._id,
+        request: request
+      }
+      return cb(null, res)
+    }
+
+    return storageHelper.getPutRequest(mediaDocument.storageType, 
+                                       mediaDocument.storage,
+                                       _cb)
+  }
+  
+  async.waterfall([
+    makeStorageData,
+    storageHelper.createStorage(data.storageType),
+    makeMediaContent,
+    createMedia,
+    getPutRequest,
+  ], function(err, res){
+    if(err) { return callback(err) }
+    return callback(null, res)
+  })
 }
 
 function getMediaBase(selector, callback) {
@@ -93,4 +133,5 @@ module.exports = {
   deleteMedia: deleteMedia,
   deleteMediaById: deleteMediaById,
   getSignedPutRequest: getSignedPutRequest,
+  setMediaValid: setMediaValid,
 }

@@ -2,16 +2,16 @@
  * Module dependencies.
  */
 
-const MediaHelper = require('./helper.js')
+const mediaHelper = require('./helper.js')
 
 // Need modification
 function createMedia(req, res, next) {
-  var create = MediaHelper.createMedia(req.body)
+  var create = mediaHelper.createMedia(req.body)
   var callback = function(err, result) {
     if (err) { return next(err) }
     return res.json(result.getPublicFields)
   }
-  return MediaHelper.createMedia(callback)
+  return mediaHelper.createMedia(callback)
 }
 
 function getMedia(req, res, next) {
@@ -20,7 +20,7 @@ function getMedia(req, res, next) {
     if (err) { return next(err) }
     return res.json(result.getPublicFields())
   }
-  return MediaHelper.getMediaById(mediaId)
+  return mediaHelper.getMediaById(mediaId)
 }
 
 // Need modification
@@ -44,14 +44,41 @@ function getUploadRequest(req, res, next) {
     if (err) { return next(err) }
     return res.json(result)
   }
+ 
+  let data = {
+    storageType: 's3',
+    userId: req.user._id,
+    mediaType: 'image',
+  }
   
-  return MediaHelper.getSignedPutRequest('s3', callback)
+  return mediaHelper.getSignedPutRequest(data, callback)
+}
+
+function setMediaValid(req, res, next) {
+  var mediaId = req.body.mediaId
+  if (!mediaId) {
+    let err = new Error("mediaId should be provided")
+    err.statusCode = 400
+    return next(err)
+  }
+  
+  let callback = function(err, result) {
+    if (err) { return next(err) }
+    if (!result) {
+      let err = new Error("Failed to set media as valid. MediaId: " + mediaId)
+      err.statusCode = 500
+      return next(err)
+    }
+    return res.status(204).send()
+  }
+  
+  return mediaHelper.setMediaValid(mediaId, callback)
 }
 
 module.exports = {
   getUploadRequest: getUploadRequest,
-//  create: createMedia,
   get: getMedia,
+  setValid: setMediaValid,
 //  update: updateMedia,
   delete: deleteMedia
 }

@@ -1,7 +1,11 @@
-const S3Config = require('../../../config/s3')
-const S3Model = require('./model')
 const async = require('async')
+const aws4 = require('aws4')
+const crypto = require('crypto')
+const curry = require('curry')
 const util = require('util')
+
+const S3Model = require('./model')
+const S3Config = require('../../../config/s3')
 
 // pathStyleUrlRegex will match:
 // https://s3-us-west-2.amazonaws.com/johnsmith/photos/puppy.jpg
@@ -53,12 +57,47 @@ function signRequest(opt, cb) {
 }
 
 var create = curry(function (content, callback) {
-  var storage = new S3Model.S3Storage(content)
-  return callback(null, storage)
+  let getPath = function(cb) {
+    if (content.path) {
+      var path = content.path 
+    } else {
+      // generate random path
+      let randomHash = crypto.createHash('sha1').update(new Date().valueOf().toString()).digest('hex')
+      let folder = S3Config.userPathPrefix + randomHash.slice(0, 2) + '/'
+      let filename = randomHash.slice(2, 12) + Date.now().toString()
+      var path = folder + filename
+    }
+    return cb(null, path)
+  }
+
+  let makeContent = function(path, cb) {
+    content.path = path
+    return cb(null, content)
+  }
+
+  let createDocument = function(content, cb) {
+    try {
+      var storage = new S3Model.S3Storage(content)
+      return cb(null, storage)
+    } catch(err) {
+      err.statusCode = 500
+      return cb(err)
+    }
+  }
+
+  async.waterfall([
+    getPath,
+    makeContent,
+    createDocument
+  ], function(err, res) {
+    if(err) { return callback(err) }
+    return callback(null, res)
+  })
 })
 
 function getPutRequest(storageDocument, callback) {
   let createOpt = function(cb) {
+     let d = new Date()
      let opt = {
       service: 's3',
       region: S3Config.region,
@@ -66,7 +105,7 @@ function getPutRequest(storageDocument, callback) {
       path: storageDocument.path,
       host: storageDocument.host,
       headers: {
-        'X-Amz-Date': Date.now().toUTCString(),
+        'X-Amz-Date': d.toUTCString(),
       }
     }
     return cb(null, opt)
@@ -119,6 +158,7 @@ function getGetRequest(storageDocument, callback) {
 }
 
 module.exports = {
+  create: create,
   getPutRequest: getPutRequest,
   getGetRequest: getGetRequest,
 } 

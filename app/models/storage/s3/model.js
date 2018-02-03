@@ -45,7 +45,7 @@ S3StorageSchema
 S3StorageSchema
   .virtual('host')
   .get(function(){
-    return this.bucketname + '.s3.amazonaws.com'
+    return this.bucket + '.s3.amazonaws.com'
   })
 
 var s3Storage = mongoose.model('S3Storage', S3StorageSchema) 
