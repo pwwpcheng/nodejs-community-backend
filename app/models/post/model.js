@@ -12,7 +12,7 @@ const PostStatisticsSchema = new Schema({
     type: Number,
     default: 0,
   },
-})
+}, {_id: false})
 
 var postStatistics = mongoose.model("PostStatistics", PostStatisticsSchema)
 
@@ -25,15 +25,13 @@ const PostGroupSchema = new Schema({
   groupId: {
     type: Schema.Types.ObjectId,
     required: true,
-    index: {
-      unique: true,
-    },
+    index: true,
   },
   addDate: {
     type: Date,
     default: Date.now(),
   },
-})
+}, {_id: false})
 
 var postGroup = mongoose.model("PostGroup", PostGroupSchema)
 
@@ -49,7 +47,7 @@ const PostContentSchema = new Schema({
   },
   // media reference a list of Media document IDs
   media: [Schema.Types.ObjectId]
-})
+}, {_id: false})
 
 var postContent = mongoose.model("PostContent", PostContentSchema)
 
@@ -62,7 +60,7 @@ const PostSchema = new Schema({
     type: [PostGroupSchema],
     default: []
   },
-  postTime: {
+  createdAt: {
     type: Date, 
     default: Date.now()
   },
@@ -97,9 +95,10 @@ PostSchema.methods.getPublicFields = function() {
   var returnObj = {
     content: this.content,
     userId: this.userId,
-    conmmunityId: this.communityId,
-    postTime: this.postTime,
+    groupId: this.groupId,
+    createdAt: this.createdAt,
     media: this.media,
+    statistics: this.statistics,
   }
   if(this.loc) {
     returnObj['loc'] = this.loc

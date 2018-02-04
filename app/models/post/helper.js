@@ -2,115 +2,120 @@ const async = require('async')
 const curry = require('curry')
 const mongoose = require('mongoose')
 const Post = require('./model').Post
-const PostGroup = require('./model').PostGroup
-const PostContent = require('./model').PostContent
+const postModel = require('./model')
 
-function makePost(postData, userId) {
-  return function(postContent, callback) {
-    var data = {
-      userId: userId,
-      postTime: Date.now(),
-      content: postContent
-    }
-    if(postData.communityId) {
-      data['communityId'] = postData.communityId
-    }
-    if(postData.loc) {
-      data['loc'] = postData.loc
-    }
-    if(postData.permissions) {
-      data['permissions'] = {
-        permissionType: postData.permissions
-      }
-    }
-    callback(null, data)
+var makePost = curry(function(postData, callback) {
+  var oprs = [
+    makePostGroup(postData),
+    makePostContent(postData),
+    makePostStatistics(postData)
+  ]
+  if(postData.loc) {
+    oprs.push(makePostLoc(postData))
   }
-}
-
-var makePostGroup = function(groupId) {
-  var postGroupObj = new PostGroup({
-    addDate: Date.now(),
-    groupId: groupId,
+  //if(postData.permissions) {
+  //  oprs.push(makePostPermission(postData.permissions)
+  //}
+  async.series(oprs, function(err, data) {
+    if(err) { return callback(err) }
+    return callback(null, postData)
   })
+})
 
-  return function(callback) {
-    callback(null, postGroupObj)
-  }
-}
+var makePostStatistics = curry(function(postContent, callback) {
+  var statistics = postContent.statistics || {}
+  var stats = new postModel.PostStatistics({
+    replayCount: statistics.replayCount || 0,
+    viewsCount: statistics.viewsCount || 0,
+  })
+  postContent.statistics = stats
+  return callback(null, postContent) 
+})
 
-function makePostContent(postData) {
-  var contentData = {
-    // Temporarily all url submitted with the post
-    // are images/videos stored in AWS S3.
-    // Hereby all mediaUrl are treated as S3 Url
-    
-  }
+var makePostGroup = curry(function(postContent, callback) {
+  var postGroupObj = new postModel.PostGroup({
+    addDate: Date.now(),
+    groupId: postContent.groupId,
+  })
+  postContent.groups = [postGroupObj]
+  return callback(null, postContent)
+})
 
-  return function(callback) {
-    var content = {
-      text: contentData.text || ''
-    }
-    if (postData.media) {
-      content[media] = contentData.media,
-      content[contentType] = contentData.contentType
-    }
-    callback(null, content)
-  }
-}
+var makePostContent = curry(function(postContent, callback) {
+  var content = new postModel.PostContent({
+    text: postContent.text || '',
+    media: [postContent.mediaId],
+    contentType: postContent.type,
+  })
+  postContent.content = content
+  return callback(null, content)
+})
 
+var makePostLoc = curry(function(postContent, callback){
+  // Temporarily I don't know how to deal with this one.
+  return callback(null, postContent)
+})
 
-function getPostBase(selector, callback) {
+var getPost = curry(function(selector, callback) {
   Post.findOne(selector, function(err, post) {
     if(err) {
       callback(err)
     } else if (!post) {
-      var err = new Error('Post(id:"' + postId + '") not found.')
+      var err = new Error('Post("' + JSON.stringify(selector) + '") not found.')
       err.statusCode = 400
       callback(err)
     } else {
       callback(null, post)
     }
   })
-}
-
-var getPost = curry(getPostBase)
+})
 
 var getPostById = function(postId) {
   return getPost({_id: postId})
 }
 
-function createPost() {
-  return function(content, callback){
-    Post.create(content, function(err, result) {
-      if(err)
-        return callback(err)
-      callback(null, true)
-    })
-  }
-
-}
-
-function deletePost(postId) {
-  return function(callback) {
-    Post.findOneAndRemove({_id: postId}, function(err, post){
+var createPost = curry(function(content, callback){
+  var create = function(postDocument, callback) {
+    Post.create(postDocument, function(err, result) {
       if(err) { return callback(err) }
-      if(!post) { 
-        var err = new Error('Post (id: "' + postId + '" does not exist')
-        err.statusCode = 404
-        callback(err)
-      } else {
-        callback(null, post)
-      }
+      return callback(null, true)
     })
   }
+  
+  async.waterfall([
+    makePost(content),
+    create,
+  ], function(err, data) {
+    if(err) {return callback(err)}
+    return callback(null, data) 
+  })
+})
+
+var deletePost = curry(function(selector, callback) {
+  Post.findOneAndRemove(selector, function(err, post){
+    if(err) { return callback(err) }
+    if(!post) { 
+      var err = new Error('Post "' + selector + '" does not exist')
+      err.statusCode = 404
+      callback(err)
+    } else {
+      callback(null, post)
+    }
+  })
+})
+
+function deletePostById(postId) {
+  return deletePost({_id: postId})
 }
 
 module.exports = {
   getPost: getPost,
+  getPostById: getPostById,
   createPost: createPost,
   deletePost: deletePost,
+  deletePostById: deletePostById,
   //updatePost: updatePost,
   makePost: makePost,
-  makePostContent: makePostContent
+  makePostContent: makePostContent,
 }
 

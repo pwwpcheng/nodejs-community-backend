@@ -26,7 +26,7 @@ var MemberSchema = new Schema({
     type: [Schema.Types.ObjectId],
     default: [],
   }
-})
+}, {_id: false})
 
 var PinnedGroupSchema = new Schema({
   groupdId: {
@@ -36,7 +36,7 @@ var PinnedGroupSchema = new Schema({
   pinDate: {
     type: Date,
   },
-})
+}, {_id: false})
 
 var FriendSchema = new Schema({
   id: {
@@ -51,7 +51,7 @@ var FriendSchema = new Schema({
     type: [Schema.Types.ObjectId],
     default: [],
   }
-})
+}, {_id: false})
 
 var UserPreferenceSchema = new Schema({
   permission: {
@@ -59,7 +59,7 @@ var UserPreferenceSchema = new Schema({
     enum: ['public', 'private', 'community'],
     default: 'public',
   }
-})
+}, {_id: false})
 
 var UserSchema = new Schema({
   username: { 

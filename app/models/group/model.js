@@ -13,7 +13,7 @@ var GroupPostSchema = new Schema({
     type: Date,
     required: true,
   }
-})
+}, {_id: false})
 
 var GroupSchema = new Schema({
   groupname: {
