@@ -4,6 +4,24 @@ const mongoose = require('mongoose')
 const Post = require('./model').Post
 const postModel = require('./model')
 
+var makeFields = curry(function(fields, callback) {
+  if(!fields) {return callback(null, "")}
+  
+  let _fields = []
+  if(fields.id) { _fields.push("_id")  }
+  if(fields.date) { _fields.push("createdAt")  }
+  if(fields.userId) { _fields.push("userId")  }
+  
+  return callback(null, _fields.join(' '))
+})
+
+var makeSorter = curry(function(fields, callback) {
+  var sorter = {}
+  if(!fields) {return callback(null, sorter)}
+  if(fields.date) { sorter.createdAt = fields.date }
+  return callback(null, sorter)
+})
+
 var makePost = curry(function(postData, callback) {
   var oprs = [
     makePostGroup(postData),
@@ -56,6 +74,23 @@ var makePostLoc = curry(function(postContent, callback){
   return callback(null, postContent)
 })
 
+var getPosts = curry(function(selector, fields, sortField, callback) {
+  Post.find(selector)
+      .select("_id")
+      .sort(sortField)
+      .exec(function(err, posts){
+              if(err) { return callback(err) }
+              return callback(null, posts)
+      })
+})
+
+var getPostsByGroupId = function(groupId, fields, sortField) {
+  let selector = {"groups.groupId": groupId}
+  let _fields = fields || ""
+  let _sortField = sortField || {}
+  return getPosts(selector, _fields, _sortField)
+}
+
 var getPost = curry(function(selector, callback) {
   Post.findOne(selector, function(err, post) {
     if(err) {
@@ -104,6 +139,10 @@ var deletePost = curry(function(selector, callback) {
   })
 })
 
+var increaseView = curry(function(postId, callback){
+  
+})
+
 function deletePostById(postId) {
   return deletePost({_id: postId})
 }
@@ -111,11 +150,15 @@ function deletePostById(postId) {
 module.exports = {
   getPost: getPost,
   getPostById: getPostById,
+  getPosts: getPosts,
+  getPostsByGroupId: getPostsByGroupId,
   createPost: createPost,
   deletePost: deletePost,
   deletePostById: deletePostById,
   //updatePost: updatePost,
   makePost: makePost,
   makePostContent: makePostContent,
+  makeSorter: makeSorter,
+  makeFields: makeFields,
 }
 

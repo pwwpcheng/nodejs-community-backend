@@ -87,7 +87,7 @@ function getSignedPutRequest(data, callback) {
 }
 
 function getMediaBase(selector, callback) {
-  Media.find(selector, function(err, result) {
+  Media.findOne(selector, function(err, result) {
     if(err) {
       err.statusCode = 500
       return callback(err)

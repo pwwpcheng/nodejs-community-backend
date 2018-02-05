@@ -16,11 +16,11 @@ function createMedia(req, res, next) {
 
 function getMedia(req, res, next) {
   let mediaId = req.params.mediaId
-  let callback = function(err, res) {
+  let callback = function(err, result) {
     if (err) { return next(err) }
     return res.json(result.getPublicFields())
   }
-  return mediaHelper.getMediaById(mediaId)
+  return mediaHelper.getMediaById(mediaId)(callback)
 }
 
 // Need modification

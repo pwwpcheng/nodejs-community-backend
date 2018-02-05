@@ -1,38 +1,63 @@
 const async = require('async')
 const groupHelper = require('./helper')
 const userHelper = require('../user/helper')
+const postHelper = require('../post/helper')
 
 function getGroup(req, res, next) {
+  let getGroupPosts = function(group, callback) {
+    let groupId = group._id
+
+    // append post id onto existing group object
+    async.parallel([
+      postHelper.makeFields(['id']),
+      postHelper.makeSorter({date: -1}),
+    ], function(err, res){
+      // res: [fields, sorter]
+      if(err) {return callback(err)}
+      let fields = res[0],
+          sorter = res[1]
+      return postHelper.getPostsByGroupId(groupId, fields, sorter)(
+        function(err, posts) {
+          if(err) { return callback(err) }
+          group.posts = posts
+          return callback(null, group)
+        })
+    })
+  }
+
+  let getGroupDetail = function(callback) {
+    let cb = function(err, group) {
+      if(err) {return callback(err)}
+      return callback(null, group.getProtectedFields())
+    }
+    return groupHelper.getGroupByName(req.params.groupname)(cb)
+  }
+  
   async.waterfall([
-    groupHelper.getGroupFromName(req.params.groupname)
+    getGroupDetail,
+    getGroupPosts
   ], function(err, result) {
     if(err) { return next(err) }
-    return res.json(result.getProtectedFields())
+    return res.json(result)
   })
 }
 
-function updateGroup() {
-  return function(req, res, next) {
-    next(new Error('Not implemented'))
-  }
+function updateGroup(req, res, next) {
+  return next(new Error('Not implemented'))
 }
 
-function createGroup() {
-  return function(req, res, next) {
-    next(new Error('Not implemented'))
-  }
+function createGroup(req, res, next) {
+  return next(new Error('Not implemented'))
 }
 
-function removeGroup() {
-  return function(req, res, next) {
-    next(new Error('Not implemented'))
-  } 
+function removeGroup(req, res, next) {
+  return next(new Error('Not implemented'))
 }
 
 function joinGroup(req, res, next) { 
   var groupname = req.params.groupname
   var userId = req.user._id
-  var getGroupIdFromName = function(callback) {
+  var getGroupIdByName = function(callback) {
     var _checker = groupHelper.checkFieldExists('groupname', groupname)
     return _checker(function(err, res) {
         if(err) {return next(err)}
@@ -46,7 +71,7 @@ function joinGroup(req, res, next) {
   }
 
   async.waterfall([
-    getGroupIdFromName,
+    getGroupIdByName,
     function(groupId, callback) {
       var helper = userHelper.joinGroup(userId, groupId)
       helper(function(err, res) {
@@ -67,7 +92,7 @@ function leaveGroup(req, res, next) {
   var groupname = req.params.groupname
   var userId = req.user._id
 
-  var getGroupIdFromName = function(callback) {
+  var getGroupIdByName = function(callback) {
     var _checker = groupHelper.checkFieldExists('groupname', groupname)
     return _checker(function(err, res) {
         if(err) {return next(err)}
@@ -81,7 +106,7 @@ function leaveGroup(req, res, next) {
   }
 
   async.waterfall([
-    getGroupIdFromName,
+    getGroupIdByName,
     function(groupId, callback) {
       var helper = userHelper.leaveGroup(userId, groupId)
       helper(function(err, res) {
@@ -103,7 +128,7 @@ module.exports = {
   get: getGroup,
   joinGroup: joinGroup,
   leaveGroup: leaveGroup,
-  create: createGroup(),
-  update: updateGroup(),
-  delete: removeGroup()
+  create: createGroup,
+  update: updateGroup,
+  delete: removeGroup,
 }

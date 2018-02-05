@@ -34,7 +34,7 @@ function getGroupBase(selector, callback) {
   Group.findOne(selector, function(err, result) {
     if(err) return callback(err)
     if(!result) {
-      var e = new Error('Group (name: "' + groupname + '") does not exist.')
+      var e = new Error('Group (name: "' + JSON.stringify(selector) + '") does not exist.')
       e.statusCode = 404
       return callback(e)
     }
@@ -49,7 +49,7 @@ function getGroupById(groupId) {
 }
 
 function getGroupByName(groupName) {
-  return getGroup({name: groupName})
+  return getGroup({groupname: groupName})
 }
 
 function getGroupPostsBase(groupId, callback) {

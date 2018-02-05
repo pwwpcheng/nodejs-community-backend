@@ -52,7 +52,7 @@ var GroupSchema = new Schema({
       default: 'public',
     },
   },
-  posts: [GroupPostSchema],
+  //posts: [GroupPostSchema],
   
 }, {
   collection: 'Group',
@@ -60,6 +60,7 @@ var GroupSchema = new Schema({
 
 GroupSchema.methods.getPublicFields = function() {
   var publicObj = {
+    _id: this._id,
     groupname: this.groupname,
     alias: this.alias,
     description: this.description,
@@ -70,6 +71,7 @@ GroupSchema.methods.getPublicFields = function() {
 
 GroupSchema.methods.getProtectedFields = function() {
   var protectedObj = {
+    _id: this._id,
     groupname: this.groupname,
     alias: this.alias,
     description: this.description,
