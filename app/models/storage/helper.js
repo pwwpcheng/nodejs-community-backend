@@ -8,10 +8,15 @@ const rawHelper = require('./raw/helper')
 // storageType: (String) one of ['raw', 's3']
 // data: (Object) detail for document to create
 function createStorageBase(storageType, data, callback) {
+  let cb = function(err, res) {
+    if(err) { return callback(err) }
+    return callback(null, res)
+  }
+
   if(storageType === 's3') {
-    return s3Helper.create(data, callback)
+    return s3Helper.create(data, cb)
   } else if (storageType === 'raw') {
-    return rawHelper.create(data, callback)
+    return rawHelper.create(data, cb)
   } else {
     let err = new Error('createStorage for ' + storageType + ' has not implemented')
     err.statusCode = 501

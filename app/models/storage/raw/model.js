@@ -7,7 +7,7 @@ var RawStorageSchema = new Schema({
     type: String,
     required: true,
   },
-})
+}, {_id: false})
 
 RawStorageSchema
   .virtual('request')
@@ -21,9 +21,9 @@ RawStorageSchema
     return request
   })
 
-var rawStorage = mongoose.model("RawStorage", RawStorageSchema)
+//var rawStorage = mongoose.model("RawStorage", RawStorageSchema)
 
 module.exports = {
-  RawStorage: rawStorage,
+  //RawStorage: rawStorage,
   RawStorageSchema: RawStorageSchema
 }

@@ -2,7 +2,7 @@ const mongoose = require("mongoose")
 const Schema = mongoose.Schema
 const GeoSchema = require('../geo/model').GeoSchema
 const MediaSchema = require('../media/model').MediaSchema
-const defaultMedia = require('../media/model').defaultMedia
+//const defaultMedia = require('../media/model').defaultMedia
 
 var GroupPostSchema = new Schema({
   postId: {
@@ -31,7 +31,7 @@ var GroupSchema = new Schema({
   },
   profileImage: {
     type: MediaSchema,
-    default: defaultMedia,
+    //default: defaultMedia,
   },
   creationDate: {
     type: Date,

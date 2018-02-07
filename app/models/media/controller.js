@@ -9,7 +9,7 @@ function createMedia(req, res, next) {
   var create = mediaHelper.createMedia(req.body)
   var callback = function(err, result) {
     if (err) { return next(err) }
-    return res.json(result.getPublicFields)
+    return res.json(result.getPublicFields())
   }
   return mediaHelper.createMedia(callback)
 }
@@ -48,6 +48,7 @@ function getUploadRequest(req, res, next) {
   let data = {
     storageType: 's3',
     userId: req.user._id,
+    //userId: "5a7a02d5797e0f6abe22b80a",
     mediaType: 'image',
   }
   

@@ -52,7 +52,6 @@ function getSignedPutRequest(data, callback) {
       creationDate: Date.now(),
       userId: data.userId,
       mediaType: data.mediaType,
-      storageType: data.storageType,
       storage: storageData,
       isValid: false,
     }
@@ -68,10 +67,7 @@ function getSignedPutRequest(data, callback) {
       }
       return cb(null, res)
     }
-
-    return storageHelper.getPutRequest(mediaDocument.storageType, 
-                                       mediaDocument.storage,
-                                       _cb)
+    return mediaDocument.storage.getPutRequest(_cb)
   }
   
   async.waterfall([

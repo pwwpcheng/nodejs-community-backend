@@ -1,8 +1,7 @@
 const mongoose = require("mongoose")
 const Schema = mongoose.Schema
-const RawStorageSchema = require('../storage/raw/model').RawStorageSchema
-const S3StorageSchema = require('../storage/s3/model').S3StorageSchema
-const S3DefaultImage = require('../storage/s3/model').S3DefaultImage
+const StorageSchema = require('../storage/model').StorageSchema
+//const S3DefaultImage = require('../storage/s3/model').S3DefaultImage
 
 var MediaSchema = new Schema({
   //_id: Schema.Types.ObjectId,
@@ -38,15 +37,15 @@ var MediaSchema = new Schema({
     type: String,
     default: 'application/octet-stream'
   },
-  storageType: {
-    type: String,
-    enum: ['raw', 's3'],
-    required: true
-  },
+  //storageType: {
+  //  type: String,
+  //  enum: ['raw', 's3'],
+  //  required: true
+  // },
   // Storage must be one of the instances of:
   // [RawStorage, S3Storage]
   storage: {
-    type: Schema.Types.Mixed,
+    type: StorageSchema,
     required: true,
   },
 }, {
@@ -60,27 +59,27 @@ MediaSchema
     return this.storage.request
   })
 
-
 MediaSchema.methods.getPublicFields = function() {
-  var privateObj = {
-    id: this._id,
-    request: this.request
+  let t = this
+  let publicObj = {
+    id: t._id,
+    request: t.storage.getGetRequest()
   }
-  return privateObj
+  return publicObj
 }
 
     
 var Media = mongoose.model('Media', MediaSchema)
-var defaultMedia = new Media({
+/*var defaultMedia = new Media({
   mediaType: "image",
   contentType: "image/png",
   storageType: "s3",
   storage: S3DefaultImage,
-})
+})*/
 
 /** export schema */
 module.exports = {
   MediaSchema: MediaSchema,
   Media: Media,
-  defaultMedia: defaultMedia,
+  //defaultMedia: defaultMedia,
 }

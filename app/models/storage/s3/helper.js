@@ -4,8 +4,9 @@ const crypto = require('crypto')
 const curry = require('curry')
 const util = require('util')
 
-const S3Model = require('./model')
+//const S3Model = require('./model')
 const S3Config = require('../../../config/s3')
+const Storage = require('../model').Storage
 
 // pathStyleUrlRegex will match:
 // https://s3-us-west-2.amazonaws.com/johnsmith/photos/puppy.jpg
@@ -72,12 +73,13 @@ var create = curry(function (content, callback) {
 
   let makeContent = function(path, cb) {
     content.path = path
+    content.storageType = 's3'
     return cb(null, content)
   }
 
   let createDocument = function(content, cb) {
     try {
-      var storage = new S3Model.S3Storage(content)
+      var storage = new Storage({storages: [content]})
       return cb(null, storage)
     } catch(err) {
       err.statusCode = 500

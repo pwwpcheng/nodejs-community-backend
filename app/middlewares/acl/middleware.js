@@ -2,10 +2,9 @@ function checkPermission(req, acl) {
   return function(resource, callback) {
     acl.isAllowed(req.user._id.toString(), req.url, req.method, function(err, result) {
       if(err) {
-        callback(err)
+        return callback(err)
       } else {
-        console.log(result)
-        callback(err, result)
+        return callback(err, result)
       }
     })
   }
@@ -21,7 +20,8 @@ function aclMiddleware(acl, controlStrategy) {
     async.waterfall([      
       checkPermission(req, acl)
     ], function(err, result) {
-      
+      if(err) {return next(err)} 
+      return next()
     })
  }
 }
