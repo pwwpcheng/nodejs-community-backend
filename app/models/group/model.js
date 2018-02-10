@@ -4,15 +4,10 @@ const GeoSchema = require('../geo/model').GeoSchema
 const MediaSchema = require('../media/model').MediaSchema
 //const defaultMedia = require('../media/model').defaultMedia
 
-var GroupPostSchema = new Schema({
-  postId: {
-    type: Schema.Types.ObjectId,
-    required: true,
-  },
-  addDate: {
-    type: Date,
-    required: true,
-  }
+var GroupStatisticsSchema = new Schema({
+  postCount: Number,
+  hot: Number,
+  hotOneHour: Number,
 }, {_id: false})
 
 var GroupSchema = new Schema({
@@ -29,11 +24,16 @@ var GroupSchema = new Schema({
     type: String,
     default: 'Our group',
   },
-  profileImage: {
-    type: MediaSchema,
+  groupImage: {
+    // Points to a Media document
+    type: Schema.Types.ObjectId,
     //default: defaultMedia,
   },
-  creationDate: {
+  location: {
+    type: GeoSchema,
+    required: true,
+  },
+  createdAt: {
     type: Date,
   },
   creator: {
@@ -51,9 +51,22 @@ var GroupSchema = new Schema({
       enum: ['public', 'protected', 'private'],
       default: 'public',
     },
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
+    isPostBanned: {
+      type: Boolean,  
+      default: false,
+    },
+    allowJoin: {
+      type: Boolean,
+      default: true,
+    },
   },
-  //posts: [GroupPostSchema],
-  
+  statistics: {
+    type: GroupStatisticsSchema,
+  }, 
 }, {
   collection: 'Group',
 })
@@ -63,8 +76,10 @@ GroupSchema.methods.getPublicFields = function() {
     _id: this._id,
     groupname: this.groupname,
     alias: this.alias,
+    location: this.location.getPublicFields(),
+    statistics: this.statistics,
     description: this.description,
-    profileImage: this.profileImage,
+    groupImage: this.groupImage,
   }
   return publicObj
 }
@@ -75,7 +90,9 @@ GroupSchema.methods.getProtectedFields = function() {
     groupname: this.groupname,
     alias: this.alias,
     description: this.description,
-    profileImage: this.profileImage,
+    groupImage: this.groupImage,
+    location: this.location.getPublicFields(),
+    statistics: this.statistics,
     creationDate: this.creationDate,
     creator: this.creator,
     posts: this.posts,

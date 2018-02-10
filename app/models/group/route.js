@@ -8,6 +8,7 @@ const acl = require('./acl')
 router.use(passport.authenticationMiddleware())
 
 //router.post('/', [groupValidator.validateUserCreate()], groupController.create)
+router.post('/', [], groupController.create)
 router.get('/:groupname', groupController.get)
 //router.put('/:groupname', [groupValidator.validateUserUpdate()],
 //                          groupController.update)

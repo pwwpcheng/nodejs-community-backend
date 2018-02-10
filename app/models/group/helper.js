@@ -2,6 +2,7 @@ const async = require('async')
 const curry = require('curry')
 const mongoose = require('mongoose')
 const Group = require('./model').Group
+const geoHelper = require('../geo/helper')
 
 // Check if a document with {fieldName: value} exists
 // fieldName: String
@@ -20,6 +21,52 @@ function checkFieldExists(fieldName, value) {
   }
 }
 
+var createGroupBase = curry(function(groupObj, callback) {
+  Group.create(groupObj, function(err, result) {
+    if(err) {
+      if (err.code == 11000) {
+        err.statusCode = 400
+        return callback(err)
+      }
+      return callback(err)
+    }
+    return callback(null, result)
+  })
+})
+
+var makeGroupStatisticsContent = curry(function(data, callback) {
+  return callback(null, {})
+})
+
+var makeGroupPermissionsContent = curry(function(data, callback) {
+  return callback(null, {})
+})
+
+var createGroup = curry(function(data, callback) {
+  async.parallel([
+    geoHelper.makeGeoContent(data.location),
+    makeGroupStatisticsContent(data.statistics),
+    makeGroupPermissionsContent(data.permissions),
+  ], function(err, res){
+    if(err) { return callback(err) }
+    let groupContent = {
+      groupname: data.groupname,
+      alias: data.alias,
+      location: res[0],
+      creator: data.creator,
+      createdAt: data.createdAt,
+      groupImageId: data.groupImageId,
+      statistics: res[1],
+      permisions: res[2],
+    }
+    
+    // Removed undefined fields
+    groupContent = JSON.parse(JSON.stringify(groupContent))
+
+    return createGroupBase(groupContent, callback)
+  }) 
+})
+
 function makeMemberObj(groupId, role='member') {
   return function(callback) {
     var memberObj = {
@@ -30,7 +77,7 @@ function makeMemberObj(groupId, role='member') {
   }
 }
 
-function getGroupBase(selector, callback) {
+var getGroupBase = curry(function(selector, callback) {
   Group.findOne(selector, function(err, result) {
     if(err) return callback(err)
     if(!result) {
@@ -40,16 +87,14 @@ function getGroupBase(selector, callback) {
     }
     return callback(null, result)
   })
-}
-
-var getGroup = curry(getGroupBase)
+})
 
 function getGroupById(groupId) {
-  return getGroup({_id: groupId})
+  return getGroupBase({_id: groupId})
 }
 
-function getGroupByName(groupName) {
-  return getGroup({groupname: groupName})
+function getGroupByName(groupname) {
+  return getGroupBase({groupname: groupname})
 }
 
 function getGroupPostsBase(groupId, callback) {
@@ -63,7 +108,8 @@ function getGroupPostsBase(groupId, callback) {
 var getGroupPosts = curry(getGroupPostsBase)
 
 module.exports = {
-  getGroup: getGroup,
+  createGroup: createGroup,
+  getGroup: getGroupBase,
   getGroupById: getGroupById,
   getGroupByName: getGroupByName,
   checkFieldExists: checkFieldExists

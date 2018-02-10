@@ -47,7 +47,23 @@ function updateGroup(req, res, next) {
 }
 
 function createGroup(req, res, next) {
-  return next(new Error('Not implemented'))
+  let data = {
+    groupname: req.body.groupname,
+    alias: req.body.alias || '',
+    description: req.body.description,
+    location: req.body.location,
+    mediaId: req.body.mediaId,
+    //creatorId: req.user.id,
+    creator: "5a38ab7753ae9e096eac6272",
+    createdAt: Date.now(),
+    permissions: req.body.persmissions || {},
+  }
+ 
+  var callback = function(err, result) {
+    if(err) {return next(err)}
+    return res.json(result.getPublicFields())
+  } 
+  return groupHelper.createGroup(data, callback)
 }
 
 function removeGroup(req, res, next) {
