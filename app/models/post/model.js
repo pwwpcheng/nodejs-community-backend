@@ -75,7 +75,7 @@ const PostSchema = new Schema({
       enum: ['publicPost', 'privatePost', 'communityPost', 'friendPost'] 
     },
   },
-  loc: {
+  location: {
     type:GeoSchema
   },
   content: {

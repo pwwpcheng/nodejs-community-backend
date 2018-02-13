@@ -6,23 +6,15 @@ const postHelper = require('../post/helper')
 function getGroup(req, res, next) {
   let getGroupPosts = function(group, callback) {
     let groupId = group._id
+    let fields = postHelper.makeFields(['id']),
+        sorter = postHelper.makeSorter({date: -1})
+    let cb = function(err, posts) {
+      if(err) { return callback(err) }
+      group.posts = posts
+      return callback(null, group)
+    }
 
-    // append post id onto existing group object
-    async.parallel([
-      postHelper.makeFields(['id']),
-      postHelper.makeSorter({date: -1}),
-    ], function(err, res){
-      // res: [fields, sorter]
-      if(err) {return callback(err)}
-      let fields = res[0],
-          sorter = res[1]
-      return postHelper.getPostsByGroupId(groupId, fields, sorter)(
-        function(err, posts) {
-          if(err) { return callback(err) }
-          group.posts = posts
-          return callback(null, group)
-        })
-    })
+    return postHelper.getPostsByGroupId(groupId, fields, sorter)(cb)
   }
 
   let getGroupDetail = function(callback) {
@@ -40,6 +32,15 @@ function getGroup(req, res, next) {
     if(err) { return next(err) }
     return res.json(result)
   })
+}
+
+function deleteGroup(req, res, next) {
+  let callback = function(err, result) {
+    if(err) {return next(err)}
+    return res.status(204).send()
+  }  
+
+  return groupHelper.deleteGroupByName(req.params.groupname, callback)
 }
 
 function updateGroup(req, res, next) {
@@ -64,10 +65,6 @@ function createGroup(req, res, next) {
     return res.json(result.getPublicFields())
   } 
   return groupHelper.createGroup(data, callback)
-}
-
-function removeGroup(req, res, next) {
-  return next(new Error('Not implemented'))
 }
 
 function joinGroup(req, res, next) { 
@@ -146,5 +143,5 @@ module.exports = {
   leaveGroup: leaveGroup,
   create: createGroup,
   update: updateGroup,
-  delete: removeGroup,
+  delete: deleteGroup,
 }

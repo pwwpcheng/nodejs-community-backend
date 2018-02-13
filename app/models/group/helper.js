@@ -34,47 +34,46 @@ var createGroupBase = curry(function(groupObj, callback) {
   })
 })
 
-var makeGroupStatisticsContent = curry(function(data, callback) {
-  return callback(null, {})
+var makeGroupStatisticsContent = curry(function(data) {
+  return {} 
 })
 
-var makeGroupPermissionsContent = curry(function(data, callback) {
-  return callback(null, {})
+var makeGroupPermissionsContent = curry(function(data) {
+  return {}
 })
 
 var createGroup = curry(function(data, callback) {
-  async.parallel([
-    geoHelper.makeGeoContent(data.location),
-    makeGroupStatisticsContent(data.statistics),
-    makeGroupPermissionsContent(data.permissions),
-  ], function(err, res){
-    if(err) { return callback(err) }
+  try {
+    let geoContent = geoHelper.makeGeoContent(data.location),
+        statisticsContent = makeGroupStatisticsContent(data.statistics),
+        permissionsContent = makeGroupPermissionsContent(data.permissions)
+    
     let groupContent = {
       groupname: data.groupname,
       alias: data.alias,
-      location: res[0],
+      location: geoContent,
       creator: data.creator,
       createdAt: data.createdAt,
       groupImageId: data.groupImageId,
-      statistics: res[1],
-      permisions: res[2],
+      statistics: statisticsContent,
+      permisions: permissionsContent,
     }
     
     // Removed undefined fields
     groupContent = JSON.parse(JSON.stringify(groupContent))
 
     return createGroupBase(groupContent, callback)
-  }) 
+  } catch(err) {
+    return callback(err)
+  }
 })
 
 function makeMemberObj(groupId, role='member') {
-  return function(callback) {
-    var memberObj = {
-      groupId: groupId,
-      role: role
-    }
-    return callback(null, memberObj)
+  var memberObj = {
+    groupId: groupId,
+    role: role
   }
+  return memberObj
 }
 
 var getGroupBase = curry(function(selector, callback) {
@@ -107,10 +106,29 @@ function getGroupPostsBase(groupId, callback) {
 
 var getGroupPosts = curry(getGroupPostsBase)
 
+var deleteOneGroupBase = curry(function(selector, callback) {
+  Group.findOneAndRemove(selector)
+    .exec(function(err, group) {
+      if(err) return callback(err)
+      if(!group) {
+        err = new Error("Group (" + JSON.stringify(selector) + ") does not exist")
+        err.statusCode = 404
+        return callback(err)
+      }
+      return callback(null, group)
+    })
+})
+
+var deleteGroupByName = curry(function(groupname, callback) {
+  return deleteOneGroupBase({groupname: groupname}, callback)
+})
+
+
 module.exports = {
   createGroup: createGroup,
   getGroup: getGroupBase,
   getGroupById: getGroupById,
   getGroupByName: getGroupByName,
-  checkFieldExists: checkFieldExists
+  checkFieldExists: checkFieldExists,
+  deleteGroupByName: deleteGroupByName,
 }

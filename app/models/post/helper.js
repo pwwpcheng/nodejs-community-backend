@@ -5,74 +5,82 @@ const Post = require('./model').Post
 const postModel = require('./model')
 
 var makeFields = curry(function(fields, callback) {
-  if(!fields) {return callback(null, "")}
+  if(!fields) {return ""}
   
   let _fields = []
   if(fields.id) { _fields.push("_id")  }
   if(fields.date) { _fields.push("createdAt")  }
   if(fields.userId) { _fields.push("userId")  }
   
-  return callback(null, _fields.join(' '))
+  return _fields.join(' ')
 })
 
-var makeSorter = curry(function(fields, callback) {
+var makeSorter = function(fields) {
   var sorter = {}
-  if(!fields) {return callback(null, sorter)}
+  if(!fields) {return sorter}
   if(fields.date) { sorter.createdAt = fields.date }
-  return callback(null, sorter)
-})
+  return sorter
+}
 
-var makePost = curry(function(postData, callback) {
-  var oprs = [
-    makePostGroup(postData),
-    makePostContent(postData),
-    makePostStatistics(postData)
-  ]
-  if(postData.loc) {
-    oprs.push(makePostLoc(postData))
+var makePost = function(postData) {
+  try {
+    let postGroup = makePostGroup(postData.groupId),
+        postStatistics = makePostStatistics(postData.statistics),
+        postContent = makePostContent(postData)
+   
+    let postDocument = {
+      userId: postData.userId,
+      createdAt: postData.createdAt,
+      groups: postGroup,
+      statistics: postStatistics,
+      content: postContent,
+    }
+       
+    if(postData.loc) {
+      postDocument['location'] = makePostLoc(postData.location)
+    }
+    
+    if(postData.permissions) {
+      postDocument['permissions'] = makePostPermission(postData.permissions)
+    }
+    
+    return postDocument
+  } catch(err) {
+    err.statusCode = 500
+    throw err
   }
-  //if(postData.permissions) {
-  //  oprs.push(makePostPermission(postData.permissions)
-  //}
-  async.series(oprs, function(err, data) {
-    if(err) { return callback(err) }
-    return callback(null, postData)
-  })
-})
+}
 
-var makePostStatistics = curry(function(postContent, callback) {
-  var statistics = postContent.statistics || {}
+var makePostStatistics = function(s) {
+  var statistics = s || {}
   var stats = new postModel.PostStatistics({
     replayCount: statistics.replayCount || 0,
     viewsCount: statistics.viewsCount || 0,
   })
-  postContent.statistics = stats
-  return callback(null, postContent) 
-})
+  return statistics
+}
 
-var makePostGroup = curry(function(postContent, callback) {
+var makePostGroup = function(groupId) {
   var postGroupObj = new postModel.PostGroup({
     addDate: Date.now(),
-    groupId: postContent.groupId,
+    groupId: groupId,
   })
-  postContent.groups = [postGroupObj]
-  return callback(null, postContent)
-})
+  return postGroupObj
+}
 
-var makePostContent = curry(function(postContent, callback) {
+var makePostContent = function(postData) {
   var content = new postModel.PostContent({
-    text: postContent.text || '',
-    media: [postContent.mediaId],
-    contentType: postContent.type,
+    text: postData.text || '',
+    media: [postData.mediaId],
+    contentType: postData.type,
   })
-  postContent.content = content
-  return callback(null, content)
-})
+  return content
+}
 
-var makePostLoc = curry(function(postContent, callback){
+var makePostLocation = function(location){
   // Temporarily I don't know how to deal with this one.
-  return callback(null, postContent)
-})
+  throw new Error("location in Post not implemented") 
+}
 
 var getPosts = curry(function(selector, fields, sortField, callback) {
   Post.find(selector)
@@ -109,21 +117,21 @@ var getPostById = function(postId) {
   return getPost({_id: postId})
 }
 
-var createPost = curry(function(content, callback){
-  var create = function(postDocument, callback) {
-    Post.create(postDocument, function(err, result) {
-      if(err) { return callback(err) }
-      return callback(null, true)
-    })
-  }
-  
-  async.waterfall([
-    makePost(content),
-    create,
-  ], function(err, data) {
-    if(err) {return callback(err)}
-    return callback(null, data) 
+var createPostBase = curry(function(content, callback){
+  Post.create(content, function(err, result) {
+    if(err) { return callback(err) }
+    return callback(null, true)
   })
+})
+
+var createPost = curry(function(postData, callback){
+  try {
+    let postDocument = makePost(postData)
+    return createPostBase(postDocument, callback)
+  } catch(err) {
+    err.statusCode = err.statusCode || 500
+    return callback(err)
+  }
 })
 
 var deletePost = curry(function(selector, callback) {
@@ -132,15 +140,15 @@ var deletePost = curry(function(selector, callback) {
     if(!post) { 
       var err = new Error('Post "' + selector + '" does not exist')
       err.statusCode = 404
-      callback(err)
+      return callback(err)
     } else {
-      callback(null, post)
+      return callback(null, post)
     }
   })
 })
 
 var increaseView = curry(function(postId, callback){
-  
+     
 })
 
 function deletePostById(postId) {

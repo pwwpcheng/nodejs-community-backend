@@ -7,7 +7,7 @@ const userHelper = require('../user/helper')
 function createPost(req, res, next) {
   var postData = req.body
   postData['userId'] = req.user._id
-  postData['createAt'] = Date.now()
+  postData['createdAt'] = Date.now()
   
   var cb = function(err, data){
     if(err) {

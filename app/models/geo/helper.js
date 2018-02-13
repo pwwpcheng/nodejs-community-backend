@@ -3,9 +3,9 @@ const mongoose = require('mongoose')
 const curry = require('curry')
 const geoModel = require('./model')
 
-var makeGeoContent = curry(function(data, callback) {
+var makeGeoContent = curry(function(data) {
   if(!data) {
-    return callback(null, undefined)
+    return null
   }
   
   let requiredFields = ['longitude', 'latitude', 'radius']
@@ -13,7 +13,7 @@ var makeGeoContent = curry(function(data, callback) {
     if (!data[requiredFields[i]]) {
       let err = new Error('"' + requiredFields[i] + '" should be provided with data"')
       err.statusCode = 500
-      return callback(err)
+      throw err
     }
   }
 
@@ -22,16 +22,17 @@ var makeGeoContent = curry(function(data, callback) {
     radius: data.radius
   }
   
-  return callback(null, geoContent)
+  return geoContent  
 })
 
-var create = curry(function(data, callback){
+
+var create = curry(function(data){
   try{
     var geoDocument = new geoModel.Geo()
-    return callback(null, geoDocument)
+    return geoDocument
   } catch(err) {
     err.statusCode = 500
-    return callback(err)
+    throw err
   } 
 })
 

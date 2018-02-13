@@ -9,21 +9,21 @@ const User = require('./model').User
 const userController = require('./controller')
 const ObjectId = require('mongoose').Schema.Types.ObjectId
 
-function createUser(userObj, callback) {
-  return function(callback) {
-    User.create(userObj, function (err, result) {
-      if (err) {
-        // Temporarily it's not possible to trigger this error
-        // but it's still left here just in case.
-        if(err.code === 11000){
-          return callback(Error('Email or username already exists'))
-        }
-        return callback(err)
+var createUserBase = curry(function(userObj, callback) {
+  User.create(userObj, function (err, result) {
+    if (err) {
+      // Temporarily it's not possible to trigger this error
+      // but it's still left here just in case.
+      if(err.code === 11000){
+        return callback(Error('Email or username already exists'))
       }
-      return callback(null, result)
-    })
-  }
-}
+      return callback(err)
+    }
+    return callback(null, result)
+  })
+})
+
+var createUser = createUserBase
 
 function updateOneUserBase(selector, content, callback) {
   User.findOneAndUpdate(selector, content, {new: true}, function(err, user) {
@@ -42,50 +42,42 @@ function updateUserByName(username, content) {
   return updateOneUser({username: username}, content)
 }
 
-function deleteOneUser(selector) {
-  if (!selector){
-    var err = new Error("selector not provided for delete operation")
-    err.statusCode = 400
-    return function(callback) { callback(err) }
-  }
+var deleteOneUserBase = curry(function(selector, callback) {
+  User.findOneAndRemove(selector)
+    .exec(function(err, user) {
+      if(err) return callback(err)
+      if(!user) {
+        err = new Error("User (" + JSON.stringify(selector) + ") does not exist")
+        err.statusCode = 404
+        return callback(err)
+      }
+      return callback(null, user)
+    })
+})  
 
-  return function(callback) {
-    User.findOneAndRemove(selector)
-      .exec(function(err, user) {
-        if(err) return next(err)
-        if(!user) {
-          err = new Error(req.params.username + " does not exist")
-          err.statusCode = 404
-          return next(err)
-        }
-        return res.status(204).send()
-      })
-  }
-}  
+var deleteOneUser = deleteOneUserBase
+
+var deleteUserByName = curry(function(username, callback) {
+  return deleteOneUser({username: username}, callback)
+})
 
 function deleteUserById(userId) {
-  return deleteOneUser({_id: ObjectId(userId)})
+  return deleteOneUserBase({_id: ObjectId(userId)})
 }
 
-function deleteUserByName(username) {
-  return deleteuserByname({username: username})
-}
+var deleteUserByName = curry(function(username, callback) {
+  return deleteOneUserBase({username: username}, callback)
+})
 
 function getUserById(userId, fields='') {
-  return getOneUser({_id: userId}, fields)
+  return getOneUserBase({_id: userId}, fields)
 }
 
-function getUserByName(username, fields='') {
-  return getOneUser({username: username}, fields)
-}
+var getUserByName = curry(function(username, fields='') {
+  return getOneUserBase({username: username}, fields)
+})
 
-function getOneUserBase(selector, fields, callback) {
-  if (!selector){
-    var err = new Error("selector must be provided")
-    err.statusCode = 400
-    return callback(err)
-  }
-
+var getOneUserBase = curry(function(selector, fields, callback) {
   // Get data from db.
   // Here mongodb is assumed to be the data source
   // Furure abstraction on database needs to be implemented.
@@ -98,7 +90,7 @@ function getOneUserBase(selector, fields, callback) {
     }
     return callback(null, result)
   })
-}
+})
 
 var getOneUser = curry(getOneUserBase)
 
@@ -122,17 +114,21 @@ function isFriend(userId, friendUserId, callback) {
 
 // checkFieldExists returns true if {fieldName: value} exists
 // in User collection
-function checkFieldExists(fieldName, value) {
+var checkFieldExists = curry(function(fieldName, value, callback) {
   var selector = {}
   selector[fieldName] = value
-  return function(next) {
-    User.findOne(selector, '_id', function(err, result){
-      if(err) { next(err) }
-      if(result) { next(err, fieldName) }
-      else { next(err) }
-    })
+
+  let cb = function(err, res) {
+    if(err)  {
+      if(err.statusCode == 404) {
+        return callback(null, false)
+      }
+      return callback(err)
+    }
+    if(res) {return callback(null, res)}
   }
-}
+  return getOneUserBase(selector, fieldName, cb)
+})
 
 // This function does not check if a groupId is valid
 // nor userId in order to satisfy atomicity of helper
@@ -247,6 +243,7 @@ module.exports = {
   updateUserByName: updateUserByName,
   updateUserById: updateUserById,
   deleteOneUser: deleteOneUser,
+  deleteUserByName: deleteUserByName,
   checkFieldExists: checkFieldExists,
   getOneUser: getOneUser,
   getUserByName: getUserByName,

@@ -11,23 +11,23 @@ function createUser(req, res, next) {
       var _checker = userHelper.checkFieldExists(fieldName, req.body[fieldName])
       return _checker(function(err, res){
         if(err) {return next(err)}
-        if (res === true) {
+        if (res) {
           var err = new Error(fieldName + " already exists")
           err.statusCode = 403
-          next(err)
+          return next(err)
         }
-        callback(null, false)
+        return callback(null)
       })
     }
   }
 
-  async.waterfall([
+  async.series([
     checkField('username'),
     checkField('email'),
     userHelper.createUser(req.body)
   ], function(err, result) {
-    if (err) { next(err) }
-    return next(null, result.getPrivateFields())
+    if (err) { return next(err) }
+    return res.json(result[2].getPrivateFields())
   })
 }
 
@@ -44,13 +44,12 @@ function getUser(req, res, next) {
     }
   }
   
-  async.waterfall([
-      userHelper.getUserByName(req.params.username)
-    ], function(err, result){
-      if(err) { return next(err) }
-      return res.json(result.getPublicFields())
-    }
-  )
+  let callback = function(err, result){
+    if(err) { return next(err) }
+    return res.json(result.getPublicFields())
+  }
+   
+  return userHelper.getUserByName(req.params.username)(callback)
 }
 
 function updateUser(req, res, next) {
@@ -64,13 +63,12 @@ function updateUser(req, res, next) {
 }
 
 function deleteUser(req, res, next) {
-  var callback = function(err, res) {
+  var callback = function(err, result) {
     if(err) { return next(err) }
     return res.status(204).send()
   }
 
-  var deleter = userHelper.deleteUserByName(req.params.username)
-  return deleter(callback)
+  return userHelper.deleteUserByName(req.params.username, callback)
 }
 
 function isFriendCheck(req, res, next) {
