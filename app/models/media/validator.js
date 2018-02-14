@@ -8,6 +8,7 @@ const validator = require('express-validator')
 // This needs to change in the future.
 
 function validateMediaUpdate(req, res, next) {
+  req.sanitize('mediaId').toString()
   req.checkBody('mediaId', "mediaId should be of type ObjectId").matches(/^[a-z\d]{24}$/)
   var err = req.validationErrors()
   
@@ -23,7 +24,8 @@ function validateMediaUpdate(req, res, next) {
 }
 
 function validateMediaGet(req, res, next) {
-  req.checkParams('mediaId', "mediaId should be of type ObjectId").matches(/^[a-z\d]{24}$/)
+  req.sanitize('mediaId').toString()
+  req.check('mediaId', "mediaId should be of type ObjectId").matches(/^[a-z\d]{24}$/)
   var err = req.validationErrors()
   
   // temporarily we report one error at a time

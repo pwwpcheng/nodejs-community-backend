@@ -12,6 +12,8 @@ function validatePostPermissions(req, callback) {
 }
 
 function validatePostStatistics(req, callback) {
+  req.sanitize('statistics.replayCount').toInt()
+  req.sanitize('statistics.viewsCount').toInt()
   req.check('statistics.replayCount', 'replayCount should be a positive integer').isInt({min: 0})
   req.check('statistics.viewsCount', 'viewsCount should be a positive integer').isInt({min: 0})
   
@@ -24,20 +26,25 @@ function validatePostStatistics(req, callback) {
   return callback()
 }
 
-function validatePostCreate(req, res, next) {
+var validatePostCreate = 
+function validatePostCreateOld(req, res, next) {
   let subValidatorCallback = function(err) {
     if(err) { return next(err) }
   }
 
+  req.sanitize('mediaId').toString()
+  req.sanitize('groupId').toString()
+  req.sanitize('type').toString()
   req.check('type', 'type should be one of text/image/video').isIn(['text', 'image', 'video', 'mixed'])
   req.check('groupId', 'groupId should be of type ObjectId').matches(/^[a-z0-9]{24}$/)
-  req.check('mediaId', 'groupId should be of type ObjectId').matches(/^[a-z0-9]{24}$/)
+  req.check('mediaId', 'mediaId should be of type ObjectId').matches(/^[a-z0-9]{24}$/)
   
   if(req.body.location) {
     geoValidator.geo(req, res, subValidatorCallback)
   }
 
   let err = req.validationErrors()     
+  console.log(req.body)
   if (err) {
     var returnError = err
     returnError.statusCode = 400
@@ -47,6 +54,7 @@ function validatePostCreate(req, res, next) {
 }
 
 function validatePostId(req, res, next) {
+  req.sanitize('postId').toString()
   req.check('postId', 'postId should be of type ObjectId').matches(/^[a-z0-9]{24}$/)
 
   let err = req.validationErrors()     
