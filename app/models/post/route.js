@@ -3,10 +3,11 @@ const router = express.Router()
 const passport = require('passport')
 const acl = require('./acl')
 const postController = require('./controller')
-//const postValidator = require('./validator')
+const postValidator = require('./validator')
 
-//router.post('/', [postValidator.validatePostCreate()], postController.create)
-router.post('/', [passport.authenticationMiddleware()], postController.create)
+router.use(passport.authenticationMiddleware())
+
+router.post('/', [postValidator.create], postController.create)
 router.get('/:postId', [//passport.authenticationMiddleware(),
                         //acl.get()
                         ], 

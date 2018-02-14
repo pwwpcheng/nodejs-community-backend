@@ -54,8 +54,7 @@ function createGroup(req, res, next) {
     description: req.body.description,
     location: req.body.location,
     mediaId: req.body.mediaId,
-    //creatorId: req.user.id,
-    creator: "5a38ab7753ae9e096eac6272",
+    creatorId: req.user.id,
     createdAt: Date.now(),
     permissions: req.body.persmissions || {},
   }
